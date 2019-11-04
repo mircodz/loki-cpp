@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "builder.hpp"
 
 int main()
@@ -11,11 +9,6 @@ int main()
 					.Labels({{"key", "value"}})
 					.Build();
 
-	std::cout << "ready " << agent.Ready() << std::endl;
-	std::cout << "metrics " << std::endl;
-	for(auto const &i : agent.Metrics())
-		std::cout << i << std::endl;
-
-	agent.Log("");
-
+	agent.Ready();
+	agent.Metrics();
 }

@@ -3,7 +3,6 @@
 
 #include <map>
 #include <vector>
-#include <curl/curl.h>
 
 enum LogLevels { Debug, Info, Warn, Error };
 
@@ -16,7 +15,7 @@ public:
 		  const LogLevels log_level);
 	~Agent();
 
-	size_t Ready();
+	bool Ready();
 	std::vector<std::string> Metrics();
 
 	void Log(std::string msg);
@@ -26,8 +25,6 @@ private:
 	int flush_interval_;
 	int max_buffer_;
 	LogLevels log_level_;
-
-	CURL *handle;
 
 };
 
