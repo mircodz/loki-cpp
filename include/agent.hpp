@@ -1,8 +1,9 @@
-#ifndef AGENT_H
-#define AGENT_H
+#ifndef AGENT_HPP_
+#define AGENT_HPP_
 
 #include <map>
-#include <vector>
+
+#include "stream.hpp"
 
 enum LogLevels { Debug, Info, Warn, Error };
 
@@ -10,22 +11,25 @@ class Agent
 {
 public:
 	Agent(const std::map<std::string, std::string> &labels,
-		  const int flush_interval,
-		  const int max_buffer,
-		  const LogLevels log_level);
+		  int flush_interval,
+		  int max_buffer,
+		  LogLevels log_level);
 	~Agent();
 
 	bool Ready();
-	std::vector<std::string> Metrics();
+	std::string Metrics();
 
 	void Log(std::string msg);
+
+	Stream Add(std::map<std::string, std::string> labels);
 
 private:
 	std::map<std::string, std::string> labels_;
 	int flush_interval_;
 	int max_buffer_;
 	LogLevels log_level_;
+	std::string compiled_labels_;
 
 };
 
-#endif /* AGENT_H */
+#endif /* AGENT_HPP_ */

@@ -12,19 +12,19 @@ Builder& Builder::Labels(const std::map<std::string, std::string> &labels)
 	return *this;
 }
 
-Builder& Builder::FlushInterval(const int flush_interval)
+Builder& Builder::FlushInterval(int flush_interval)
 {
 	flush_interval_ = flush_interval;
 	return *this;
 }
 
-Builder& Builder::MaxBuffer(const int max_buffer)
+Builder& Builder::MaxBuffer(int max_buffer)
 {
 	max_buffer_ = max_buffer;
 	return *this;
 }
 
-Builder& Builder::LogLevel(const LogLevels log_level)
+Builder& Builder::LogLevel(LogLevels log_level)
 {
 	log_level_ = log_level;
 	return *this;

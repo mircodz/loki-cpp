@@ -1,4 +1,7 @@
 #include "builder.hpp"
+#include "stream.hpp"
+
+#include <iostream>
 
 int main()
 {
@@ -9,6 +12,11 @@ int main()
 					.Labels({{"key", "value"}})
 					.Build();
 
-	agent.Ready();
-	agent.Metrics();
+	std::cout << agent.Metrics() << std::endl;
+	std::cout << agent.Ready() << std::endl;
+
+	auto s = agent.Add({{"yet_another_key", "yet_another_value"}});
+
+	s.Log("Hello, World!");
+
 }
