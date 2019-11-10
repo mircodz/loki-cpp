@@ -1,5 +1,5 @@
 clang
 -std=c++2a
-%cpp -pthread -lcurl -lzip -lfmt `mysql_config --cflags --libs` `pkg-config --cflags --libs libmongocxx`
-%hpp -pthread -lcurl -lzip -lfmt `mysql_config --cflags --libs` `pkg-config --cflags --libs libmongocxx`
+%cpp -lfmt
+%hpp -lfmt
 -Iinclude
