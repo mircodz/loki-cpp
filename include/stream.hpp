@@ -12,6 +12,7 @@ public:
 	Stream(const std::map<std::string, std::string> &labels);
 
 	void Log(std::string msg);
+	void AsyncLog(std::string msg);
 
 };
 

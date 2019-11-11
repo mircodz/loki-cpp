@@ -1,7 +1,9 @@
 #include "stream.hpp"
 
 #include <chrono>
+#include <thread>
 #include <iostream>
+#include <future>
 
 #include "common.hpp"
 
@@ -16,9 +18,6 @@ Stream::Stream(const std::map<std::string, std::string> &labels)
 	compiled_labels_ += "}";
 }
 
-/**
- * @todo see Agent::Log
- */
 void Stream::Log(std::string msg)
 {
 	std::string payload;
@@ -31,4 +30,9 @@ void Stream::Log(std::string msg)
 	payload += msg;
 	payload += R"("]]}]})";
 	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
+}
+
+void Stream::AsyncLog(std::string msg)
+{
+	auto future = std::async(std::launch::async, &Stream::Log, this, msg);
 }

@@ -15,3 +15,4 @@ file(GLOB SOURCES
 add_executable(loki-cpp ${SOURCES})
 
 target_link_libraries(loki-cpp fmt)
+target_link_libraries(loki-cpp pthread)

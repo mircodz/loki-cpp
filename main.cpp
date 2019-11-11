@@ -12,11 +12,15 @@ int main()
 					.Labels({{"key", "value"}})
 					.Build();
 
-	std::cout << agent.Metrics() << std::endl;
-	std::cout << agent.Ready() << std::endl;
+	//std::cout << agent.Metrics() << std::endl;
+	//std::cout << agent.Ready() << std::endl;
 
-	auto s = agent.Add({{"yet_another_key", "yet_another_value"}});
+	agent.QueueLog("Hello from the queue!");
+	agent.Flush();
 
-	s.Log("Hello, World!");
+	//auto s = agent.Add({{"yet_another_key", "yet_another_value"}});
+
+	//s.Log("Hello, World!");
+	//s.AsyncLog("Hello There!");
 
 }
