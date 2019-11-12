@@ -1,17 +1,19 @@
 #ifndef AGENT_HPP_
 #define AGENT_HPP_
 
-#include <map>
-#include <queue>
 #include <chrono>
+#include <map>
+#include <mutex>
+#include <queue>
 
-#include "stream.hpp"
-
-enum LogLevels { Debug, Info, Warn, Error };
+namespace loki
+{
 
 class Agent
 {
 public:
+	enum LogLevels { Debug, Info, Warn, Error };
+
 	Agent(const std::map<std::string, std::string> &labels,
 		  int flush_interval,
 		  int max_buffer,
@@ -23,10 +25,11 @@ public:
 
 	void Log(std::string msg);
 	void Log(std::chrono::system_clock::time_point ts, std::string msg);
+	void BulkLog(std::string msg);
 	void QueueLog(std::string msg);
 	void AsyncLog(std::string msg);
 
-	Stream Add(std::map<std::string, std::string> labels);
+	Agent Extend(std::map<std::string, std::string> labels);
 
 	// forcefully flush all logs
 	void Flush();
@@ -43,6 +46,9 @@ private:
 
 	std::chrono::system_clock::time_point last_flush_;
 
+	std::mutex lock;
 };
+
+} // namespace loki
 
 #endif /* AGENT_HPP_ */

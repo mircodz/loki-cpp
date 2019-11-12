@@ -8,11 +8,11 @@
 
 #include <fmt/format.h>
 
-namespace http {
+namespace http
+{
 
 std::string post(std::string_view host, int port, std::string_view path, std::string_view payload)
 {
-
 	constexpr std::string_view raw =
 		"POST {} HTTP/1.1\r\n"
 		"Host: {}:{}\r\n"
@@ -42,7 +42,6 @@ std::string post(std::string_view host, int port, std::string_view path, std::st
 	read(sock, buffer, sizeof buffer);
 
 	return std::string(buffer);
-
 }
 
 std::string get(std::string_view host, int port, std::string_view path)
@@ -104,16 +103,16 @@ std::string full_get(std::string_view host, int port, std::string_view path)
 
 	return detail::decode_chunked(sock);
 }
-namespace detail {
+
+namespace detail
+{
 
 int get_code(const std::string &response)
 {
 	int l = response.find(' ');
 	int r = response.find(' ', l);
 	int code = 0;
-	try {
-		code = std::stoi(response.substr(l, r));
-	} catch (...) { }
+	code = std::stoi(response.substr(l, r));
 	return code;
 }
 
@@ -171,7 +170,8 @@ std::string decode_chunked(int sock)
 		}
 	}
 
-	return response.substr(0, response.size() - 1);
+	response.pop_back();
+	return response;
 }
 
 } // namespace detail

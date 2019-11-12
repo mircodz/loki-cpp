@@ -1,26 +1,21 @@
 #include "builder.hpp"
-#include "stream.hpp"
 
-#include <iostream>
+int main() {
+	using namespace loki;
 
-int main()
-{
 	auto agent = Builder()
-					.LogLevel(Info)
+					.LogLevel(Agent::Info)
 					.FlushInterval(5000)
 					.MaxBuffer(1000)
 					.Labels({{"key", "value"}})
 					.Build();
 
-	//std::cout << agent.Metrics() << std::endl;
-	//std::cout << agent.Ready() << std::endl;
+	if (!agent.Ready()) return 1;
 
 	agent.QueueLog("Hello from the queue!");
 	agent.Flush();
 
-	//auto s = agent.Add({{"yet_another_key", "yet_another_value"}});
-
-	//s.Log("Hello, World!");
-	//s.AsyncLog("Hello There!");
-
+	auto other = agent.Extend({{"yet_another_key", "yet_another_value"}});
+	other.Log("Hello, World!");
+	other.AsyncLog("Hello There!");
 }

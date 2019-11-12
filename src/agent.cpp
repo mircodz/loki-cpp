@@ -5,6 +5,9 @@
 #include "agent.hpp"
 #include "common.hpp"
 
+namespace loki
+{
+
 Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int flush_interval,
 			 int max_buffer,
@@ -50,6 +53,18 @@ void Agent::Log(std::string msg)
 	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
 }
 
+void Agent::BulkLog(std::string msg)
+{
+	std::string payload;
+	payload += R"({"streams":[{"stream":)";
+	payload += compiled_labels_;
+	payload += R"(,"values":)";
+	payload += msg;
+	payload += R"(}]})";
+	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
+}
+
+
 void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 {
 	std::string payload;
@@ -65,25 +80,39 @@ void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 
 void Agent::QueueLog(std::string msg)
 {
+	lock.lock();
 	logs_.emplace(std::make_pair(std::chrono::system_clock::now(), msg));
+	lock.unlock();
 }
 
 void Agent::AsyncLog(std::string msg)
 {
-	auto future = std::async(std::launch::async, &Agent::AsyncLog, this, msg);
+	auto future = std::async(std::launch::async, static_cast<void(Agent::*)(std::string)>(&Agent::Log), this, msg);
 }
 
-Stream Agent::Add(std::map<std::string, std::string> labels)
+Agent Agent::Extend(std::map<std::string, std::string> labels)
 {
 	labels.merge(labels_);
-	return Stream(labels);
+	return Agent{labels, flush_interval_, max_buffer_, log_level_};
 }
 
 void Agent::Flush()
 {
+	std::string msg = "[";
+	lock.lock();
 	while (!logs_.empty()) {
 		const auto &[k, v] = logs_.front();
-		Log(k, v);
+		msg += R"([")";
+		msg += std::to_string(k.time_since_epoch().count());
+		msg += R"(",")";
+		msg += v;
+		msg += R"("],)";
 		logs_.pop();
 	}
+	lock.unlock();
+	msg.pop_back();
+	msg += "]";
+	BulkLog(msg);
 }
+
+} // namespace loki
