@@ -1,3 +1,5 @@
+## Minimal Working Example
+
 ```cpp
 #include "builder.hpp"
 
@@ -24,5 +26,5 @@ int main() {
 
 ## Moving Forward
 
-- Add worker to automatically flush queue every so often.
-- Implement "Log Level Filtering".
+- Implement a registry function to handle shared resources: log queue, locks
+    and worker threads.

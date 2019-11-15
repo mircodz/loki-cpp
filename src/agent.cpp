@@ -1,5 +1,3 @@
-#include <chrono>
-#include <iostream>
 #include <future>
 
 #include "agent.hpp"
@@ -8,18 +6,28 @@
 namespace loki
 {
 
+std::chrono::system_clock::time_point Agent::last_flush_{};
+std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> Agent::logs_{{}};
+std::mutex Agent::lock_{};
+std::atomic<bool> Agent::close_request_{false};
+std::thread Agent::thread_{};
+
 Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int flush_interval,
 			 int max_buffer,
 			 LogLevels log_level)
-	: labels_(labels)
-	, flush_interval_(flush_interval)
-	, max_buffer_(max_buffer)
-	, log_level_(log_level)
+	: labels_{labels}
+	, flush_interval_{flush_interval}
+	, max_buffer_{max_buffer}
+	, log_level_{log_level}
 {
-	compiled_labels_ += "{";
+	compiled_labels_ = "{";
 	for (const auto &label : labels_) {
-		compiled_labels_ += "\"" + label.first + "\":\"" + label.second + "\",";
+		compiled_labels_ += "\"";
+		compiled_labels_ += label.first;
+		compiled_labels_ += "\":\"";
+		compiled_labels_ += label.second;
+		compiled_labels_ += "\",";
 	}
 	compiled_labels_.pop_back();
 	compiled_labels_ += "}";
@@ -27,6 +35,25 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 
 Agent::~Agent()
 {
+	close_request_.store(true);
+	if (thread_.joinable()) {
+		thread_.join();
+	}
+}
+
+void Agent::Spin()
+{
+	// make sure to initialize thread only once
+	if (!thread_.joinable()) {
+		thread_ = std::thread([this]() {
+			while (!close_request_.load()) {
+				if (std::chrono::duration(std::chrono::system_clock::now() - last_flush_).count() > flush_interval_) {
+					Flush();
+					last_flush_ = std::chrono::system_clock::now();
+				}
+			}
+		});
+	}
 }
 
 bool Agent::Ready()
@@ -80,9 +107,9 @@ void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 
 void Agent::QueueLog(std::string msg)
 {
-	lock.lock();
+	lock_.lock();
 	logs_.emplace(std::make_pair(std::chrono::system_clock::now(), msg));
-	lock.unlock();
+	lock_.unlock();
 }
 
 void Agent::AsyncLog(std::string msg)
@@ -99,7 +126,7 @@ Agent Agent::Extend(std::map<std::string, std::string> labels)
 void Agent::Flush()
 {
 	std::string msg = "[";
-	lock.lock();
+	lock_.lock();
 	while (!logs_.empty()) {
 		const auto &[k, v] = logs_.front();
 		msg += R"([")";
@@ -109,7 +136,7 @@ void Agent::Flush()
 		msg += R"("],)";
 		logs_.pop();
 	}
-	lock.unlock();
+	lock_.unlock();
 	msg.pop_back();
 	msg += "]";
 	BulkLog(msg);

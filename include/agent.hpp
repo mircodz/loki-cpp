@@ -1,10 +1,12 @@
 #ifndef AGENT_HPP_
 #define AGENT_HPP_
 
+#include <atomic>
 #include <chrono>
 #include <map>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 namespace loki
 {
@@ -20,6 +22,8 @@ public:
 		  LogLevels log_level);
 	~Agent();
 
+	void Spin();
+
 	bool Ready();
 	std::string Metrics();
 
@@ -29,9 +33,10 @@ public:
 	void QueueLog(std::string msg);
 	void AsyncLog(std::string msg);
 
+	// duplicate agent with extended labels
 	Agent Extend(std::map<std::string, std::string> labels);
 
-	// forcefully flush all logs
+	// flush all logs
 	void Flush();
 
 private:
@@ -41,12 +46,17 @@ private:
 	LogLevels log_level_;
 	std::string compiled_labels_;
 
+	// the following attributes will be shared between agent instances
+
 	// queue containing pairs of timestamps and logs to be flush
-	std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> logs_;
+	static std::chrono::system_clock::time_point last_flush_;
+	static std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> logs_;
+	static std::mutex lock_;
 
-	std::chrono::system_clock::time_point last_flush_;
+	// handle spinning thread
+	static std::atomic<bool> close_request_;
+	static std::thread thread_;
 
-	std::mutex lock;
 };
 
 } // namespace loki

@@ -4,10 +4,10 @@ namespace loki
 {
 
 Builder::Builder()
-	: labels_({})
-	, flush_interval_(5000)
-	, max_buffer_(1000)
-	, log_level_(Agent::Info) {}
+	: labels_{{}}
+	, flush_interval_{5000}
+	, max_buffer_{1000}
+	, log_level_{Agent::Info} {}
 
 Builder& Builder::Labels(const std::map<std::string, std::string> &labels)
 {

@@ -10,6 +10,8 @@ int main() {
 					.Labels({{"key", "value"}})
 					.Build();
 
+	agent.Spin();
+
 	if (!agent.Ready()) return 1;
 
 	agent.QueueLog("Hello from the queue!");
