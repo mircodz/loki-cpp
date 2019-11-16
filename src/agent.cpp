@@ -11,6 +11,8 @@ std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> Agent:
 std::mutex Agent::lock_{};
 std::atomic<bool> Agent::close_request_{false};
 std::thread Agent::thread_{};
+std::atomic<int> Agent::instances_{0};
+CURL *Agent::curl_{NULL};
 
 Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int flush_interval,
@@ -31,6 +33,11 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 	}
 	compiled_labels_.pop_back();
 	compiled_labels_ += "}";
+	if (!curl_) {
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+		curl_ = curl_easy_init();
+	}
+	++instances_;
 }
 
 Agent::~Agent()
@@ -38,6 +45,13 @@ Agent::~Agent()
 	close_request_.store(true);
 	if (thread_.joinable()) {
 		thread_.join();
+	}
+	// make sure to cleanup the curl handle only once all instances are destroyed
+	--instances_;
+	if (!instances_.load()) {
+		curl_easy_cleanup(curl_);
+		curl_ = NULL;
+		curl_global_cleanup();
 	}
 }
 
@@ -58,13 +72,12 @@ void Agent::Spin()
 
 bool Agent::Ready()
 {
-	auto response = http::get("127.0.0.1", 3100, "/ready");
-	return http::detail::get_code(response) == 200 ? true : false;
+	return http::cget(curl_, "http://127.0.0.1:3100/ready").code == 200;
 }
 
 std::string Agent::Metrics()
 {
-	return http::full_get("127.0.0.1", 3100, "/metrics");
+	return http::cget(curl_, "http://127.0.0.1:3100/metrics").body;
 }
 
 void Agent::Log(std::string msg)
@@ -77,7 +90,7 @@ void Agent::Log(std::string msg)
 	payload += R"(",")";
 	payload += msg;
 	payload += R"("]]}]})";
-	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
+	http::cpost(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
 
 void Agent::BulkLog(std::string msg)
@@ -88,7 +101,7 @@ void Agent::BulkLog(std::string msg)
 	payload += R"(,"values":)";
 	payload += msg;
 	payload += R"(}]})";
-	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
+	http::cpost(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
 
 
@@ -102,14 +115,19 @@ void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 	payload += R"(",")";
 	payload += msg;
 	payload += R"("]]}]})";
-	http::post("127.0.0.1", 3100, "/loki/api/v1/push", payload);
+	http::cpost(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
 
-void Agent::QueueLog(std::string msg)
+bool Agent::QueueLog(std::string msg)
 {
-	lock_.lock();
-	logs_.emplace(std::make_pair(std::chrono::system_clock::now(), msg));
-	lock_.unlock();
+	std::lock_guard<std::mutex> guard(lock_);
+
+	if (logs_.size() < max_buffer_) {
+		logs_.emplace(std::make_pair(std::chrono::system_clock::now(), msg));
+		return false;
+	} else {
+		return true;
+	}
 }
 
 void Agent::AsyncLog(std::string msg)
@@ -125,6 +143,7 @@ Agent Agent::Extend(std::map<std::string, std::string> labels)
 
 void Agent::Flush()
 {
+	int count = 0;
 	std::string msg = "[";
 	lock_.lock();
 	while (!logs_.empty()) {
@@ -135,11 +154,13 @@ void Agent::Flush()
 		msg += v;
 		msg += R"("],)";
 		logs_.pop();
+		count++;
 	}
 	lock_.unlock();
 	msg.pop_back();
 	msg += "]";
-	BulkLog(msg);
+	if (count)
+		BulkLog(msg);
 }
 
 } // namespace loki

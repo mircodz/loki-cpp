@@ -8,6 +8,8 @@
 #include <queue>
 #include <thread>
 
+#include <curl/curl.h>
+
 namespace loki
 {
 
@@ -22,6 +24,7 @@ public:
 		  LogLevels log_level);
 	~Agent();
 
+	/// start a thread for automatic queue flushing
 	void Spin();
 
 	bool Ready();
@@ -30,13 +33,16 @@ public:
 	void Log(std::string msg);
 	void Log(std::chrono::system_clock::time_point ts, std::string msg);
 	void BulkLog(std::string msg);
-	void QueueLog(std::string msg);
+
+	/// \return true on failure
+	bool QueueLog(std::string msg);
+
 	void AsyncLog(std::string msg);
 
-	// duplicate agent with extended labels
+	/// \return agent instance with extended labels
 	Agent Extend(std::map<std::string, std::string> labels);
 
-	// flush all logs
+	/// flush queued logs
 	void Flush();
 
 private:
@@ -46,9 +52,10 @@ private:
 	LogLevels log_level_;
 	std::string compiled_labels_;
 
-	// the following attributes will be shared between agent instances
+	static CURL *curl_;
+	static std::atomic<int> instances_;
 
-	// queue containing pairs of timestamps and logs to be flush
+	// queue containing pairs of timestamps and logs to be flushed
 	static std::chrono::system_clock::time_point last_flush_;
 	static std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> logs_;
 	static std::mutex lock_;

@@ -11,6 +11,37 @@
 namespace http
 {
 
+Response cpost(CURL *curl, std::string_view uri, std::string_view payload)
+{
+	return request(curl, RequestMethod::POST, uri, payload);
+}
+
+Response cget(CURL *curl, std::string_view uri)
+{
+	return request(curl, RequestMethod::GET, uri, std::string_view{});
+}
+
+Response request(CURL *curl, RequestMethod method, std::string_view uri, std::string_view payload)
+{
+	Response r;
+
+	curl_easy_setopt(curl, CURLOPT_URL, uri.data());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, detail::writer);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &r.body);
+
+	if(method == POST) {
+		curl_easy_setopt(curl, CURLOPT_POST, 1);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.data());
+	}
+
+	auto res = curl_easy_perform(curl);
+
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &r.code);
+
+	return r;
+}
+
+
 std::string post(std::string_view host, int port, std::string_view path, std::string_view payload)
 {
 	constexpr std::string_view raw =
@@ -172,6 +203,14 @@ std::string decode_chunked(int sock)
 
 	response.pop_back();
 	return response;
+}
+
+size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data)
+{
+	if(data == NULL)
+		return 0;
+	data->append(ptr, size * nmemb);
+	return size * nmemb;
 }
 
 } // namespace detail
