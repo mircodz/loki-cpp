@@ -24,9 +24,6 @@ public:
 		  LogLevels log_level);
 	~Agent();
 
-	/// start a thread for automatic queue flushing
-	void Spin();
-
 	bool Ready();
 	std::string Metrics();
 
@@ -39,9 +36,6 @@ public:
 
 	void AsyncLog(std::string msg);
 
-	/// \return agent instance with extended labels
-	Agent Extend(std::map<std::string, std::string> labels);
-
 	/// flush queued logs
 	void Flush();
 
@@ -52,18 +46,11 @@ private:
 	LogLevels log_level_;
 	std::string compiled_labels_;
 
-	static CURL *curl_;
-	static std::atomic<int> instances_;
+	// the queue is unique for each agent
+	std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> logs_;
+	std::mutex mutex_;
 
-	// queue containing pairs of timestamps and logs to be flushed
-	static std::chrono::system_clock::time_point last_flush_;
-	static std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> logs_;
-	static std::mutex lock_;
-
-	// handle spinning thread
-	static std::atomic<bool> close_request_;
-	static std::thread thread_;
-
+	CURL *curl_;
 };
 
 } // namespace loki

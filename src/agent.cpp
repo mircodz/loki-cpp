@@ -6,18 +6,10 @@
 namespace loki
 {
 
-std::chrono::system_clock::time_point Agent::last_flush_{};
-std::queue<std::pair<std::chrono::system_clock::time_point, std::string>> Agent::logs_{{}};
-std::mutex Agent::lock_{};
-std::atomic<bool> Agent::close_request_{false};
-std::thread Agent::thread_{};
-std::atomic<int> Agent::instances_{0};
-CURL *Agent::curl_{NULL};
-
 Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int flush_interval,
 			 int max_buffer,
-			 LogLevels log_level)
+			 Agent::LogLevels log_level)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
@@ -33,41 +25,15 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 	}
 	compiled_labels_.pop_back();
 	compiled_labels_ += "}";
-	if (!curl_) {
-		curl_global_init(CURL_GLOBAL_DEFAULT);
-		curl_ = curl_easy_init();
-	}
-	++instances_;
+
+	curl_ = curl_easy_init();
 }
 
 Agent::~Agent()
 {
-	close_request_.store(true);
-	if (thread_.joinable()) {
-		thread_.join();
-	}
 	// make sure to cleanup the curl handle only once all instances are destroyed
-	--instances_;
-	if (!instances_.load()) {
-		curl_easy_cleanup(curl_);
-		curl_ = NULL;
-		curl_global_cleanup();
-	}
-}
-
-void Agent::Spin()
-{
-	// make sure to initialize thread only once
-	if (!thread_.joinable()) {
-		thread_ = std::thread([this]() {
-			while (!close_request_.load()) {
-				if (std::chrono::duration(std::chrono::system_clock::now() - last_flush_).count() > flush_interval_) {
-					Flush();
-					last_flush_ = std::chrono::system_clock::now();
-				}
-			}
-		});
-	}
+	curl_easy_cleanup(curl_);
+	curl_ = NULL;
 }
 
 bool Agent::Ready()
@@ -120,7 +86,7 @@ void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 
 bool Agent::QueueLog(std::string msg)
 {
-	std::lock_guard<std::mutex> guard(lock_);
+	std::lock_guard<std::mutex> lock{mutex_};
 
 	if (logs_.size() < max_buffer_) {
 		logs_.emplace(std::make_pair(std::chrono::system_clock::now(), msg));
@@ -135,17 +101,12 @@ void Agent::AsyncLog(std::string msg)
 	auto future = std::async(std::launch::async, static_cast<void(Agent::*)(std::string)>(&Agent::Log), this, msg);
 }
 
-Agent Agent::Extend(std::map<std::string, std::string> labels)
-{
-	labels.merge(labels_);
-	return Agent{labels, flush_interval_, max_buffer_, log_level_};
-}
-
 void Agent::Flush()
 {
+	std::lock_guard<std::mutex> lock{mutex_};
+
 	int count = 0;
 	std::string msg = "[";
-	lock_.lock();
 	while (!logs_.empty()) {
 		const auto &[k, v] = logs_.front();
 		msg += R"([")";
@@ -156,7 +117,6 @@ void Agent::Flush()
 		logs_.pop();
 		count++;
 	}
-	lock_.unlock();
 	msg.pop_back();
 	msg += "]";
 	if (count)

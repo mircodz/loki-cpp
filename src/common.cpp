@@ -34,6 +34,10 @@ Response request(CURL *curl, RequestMethod method, std::string_view uri, std::st
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.data());
 	}
 
+	struct curl_slist *headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type:application/json");
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
 	auto res = curl_easy_perform(curl);
 
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &r.code);

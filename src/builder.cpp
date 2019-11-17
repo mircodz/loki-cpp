@@ -33,9 +33,9 @@ Builder& Builder::LogLevel(Agent::LogLevels log_level)
 	return *this;
 }
 
-Agent Builder::Build()
+Registry Builder::Build()
 {
-	return Agent{labels_, flush_interval_, max_buffer_, log_level_};
+	return Registry{labels_, flush_interval_, max_buffer_, log_level_};
 }
 
 } // namespace loki
