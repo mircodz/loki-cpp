@@ -16,3 +16,11 @@ add_executable(loki-cpp ${SOURCES})
 
 target_link_libraries(loki-cpp fmt)
 target_link_libraries(loki-cpp pthread)
+
+find_package(CURL REQUIRED)
+if(CURL_FOUND)
+  include_directories(${CURL_INCLUDE_DIR})
+  target_link_libraries(loki-cpp ${CURL_LIBRARIES})
+else(CURL_FOUND)
+  message(FATAL_ERROR "Could not find libcurl")
+endif(CURL_FOUND)
