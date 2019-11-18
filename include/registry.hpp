@@ -22,6 +22,9 @@ public:
 		  Agent::LogLevels log_level);
 	~Registry();
 
+	bool Ready();
+	std::string Metrics();
+
 	Agent &Add(std::map<std::string, std::string> labels = {});
 
 private:

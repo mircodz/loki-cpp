@@ -1,6 +1,8 @@
 #include "registry.hpp"
 #include "agent.hpp"
 
+#include "common.hpp"
+
 namespace loki
 {
 
@@ -33,6 +35,22 @@ Registry::~Registry()
 	}
 	curl_global_cleanup();
 }
+
+bool Registry::Ready()
+{
+	// somewhat wasteful but we can afford an extra 100 ms
+	CURL *curl = curl_easy_init();
+	return http::cget(curl, "http://127.0.0.1:3100/ready").code == 200;
+	curl_easy_cleanup(curl);
+}
+
+std::string Registry::Metrics()
+{
+	CURL *curl = curl_easy_init();
+	return http::cget(curl, "http://127.0.0.1:3100/metrics").body;
+	curl_easy_cleanup(curl);
+}
+
 
 Agent &Registry::Add(std::map<std::string, std::string> labels)
 {

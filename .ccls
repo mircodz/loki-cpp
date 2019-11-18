@@ -3,3 +3,4 @@ clang
 %cpp -lfmt
 %hpp -lfmt
 -Iinclude
+-Iexternal

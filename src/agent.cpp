@@ -36,16 +36,6 @@ Agent::~Agent()
 	curl_ = NULL;
 }
 
-bool Agent::Ready()
-{
-	return http::cget(curl_, "http://127.0.0.1:3100/ready").code == 200;
-}
-
-std::string Agent::Metrics()
-{
-	return http::cget(curl_, "http://127.0.0.1:3100/metrics").body;
-}
-
 void Agent::Log(std::string msg)
 {
 	std::string payload;
