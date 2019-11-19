@@ -4,12 +4,8 @@
 #include <string>
 #include <vector>
 
-// flase branch is not implemented yet
-constexpr bool PARSE_LABELS = true;
-
 namespace loki
 {
-
 
 struct Metric
 {
@@ -31,13 +27,18 @@ public:
 		parse();
 	}
 
-	auto metrics() {
+	auto metrics()
+	{
 		return metrics_;
 	}
 
+	void step(int i)
+	{
+		cursor_ += i;
+	}
+
 	enum Token
-	{ Newline
-	, Attribute
+	{ Attribute
 	, AttributeType
 	, AttributeKey
 	, AttributeValue
@@ -55,15 +56,18 @@ public:
 	void scan_labels();
 	std::string_view scan_untill(std::string_view delim);
 
+	void new_token(Token token, std::string_view value);
+
 	/// parser
 	void parse();
 
-	std::vector<std::pair<Token, std::string_view>> tokens;
-	std::vector<Metric> metrics_;
 
 private:
 	std::string_view source_;
 	int cursor_;
+
+	std::vector<std::pair<Token, std::string_view>> tokens_;
+	std::vector<Metric> metrics_;
 
 };
 
