@@ -1,7 +1,7 @@
 set(BINARY main)
 set(CMAKE_CXX_STANDARD 17)
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.12.4)
 project(${BINARY})
 
 add_subdirectory(tests)
@@ -47,6 +47,6 @@ endif(CURL_FOUND)
 
 target_link_libraries(loki-cpp fmt)
 target_link_libraries(loki-cpp pthread)
-install(TARGETS loki-cpp
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+#install(TARGETS loki-cpp
+    #LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    #PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
