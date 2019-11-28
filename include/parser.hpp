@@ -9,7 +9,7 @@ namespace loki
 
 struct Metric
 {
-	std::string_view metric;
+	std::string_view name;
 	std::string_view value;
 	std::string_view help;
 	std::string_view type;
@@ -32,6 +32,8 @@ public:
 		return metrics_;
 	}
 
+	/// move cursor by `i` steps
+	/// \brief hello there
 	void step(int i)
 	{
 		cursor_ += i;

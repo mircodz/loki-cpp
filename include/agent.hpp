@@ -24,6 +24,8 @@ public:
 		  LogLevels log_level);
 	~Agent();
 
+	bool Done();
+
 	void Log(std::string msg);
 	void Log(std::chrono::system_clock::time_point ts, std::string msg);
 	void BulkLog(std::string msg);

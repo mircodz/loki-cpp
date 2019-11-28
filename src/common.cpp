@@ -8,7 +8,7 @@
 
 #include <fmt/format.h>
 
-namespace http
+namespace loki::http
 {
 
 Response cpost(CURL *curl, std::string_view uri, std::string_view payload)
@@ -219,4 +219,4 @@ size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data)
 
 } // namespace detail
 
-} // namespace http
+} // namespace loki::http

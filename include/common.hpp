@@ -6,7 +6,7 @@
 
 #include <curl/curl.h>
 
-namespace http {
+namespace loki::http {
 
 struct Response {
 	std::string body;
@@ -32,6 +32,6 @@ std::string decode_chunked(int sock);
 
 } // namespace detail
 
-} // namespace http
+} // namespace loki::http
 
 #endif /* COMMON_HPP_ */

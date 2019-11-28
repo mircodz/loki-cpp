@@ -73,7 +73,7 @@ void Parser::parse() {
 			}
 			break;
 		case MetricKey:
-			cur.metric = tokens_[cursor_].second;
+			cur.name = tokens_[cursor_].second;
 			break;
 		case MetricValue:
 			cur.value = tokens_[cursor_].second;

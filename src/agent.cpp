@@ -31,9 +31,13 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 
 Agent::~Agent()
 {
-	// make sure to cleanup the curl handle only once all instances are destroyed
 	curl_easy_cleanup(curl_);
 	curl_ = NULL;
+}
+
+bool Agent::Done()
+{
+	return !logs_.empty();
 }
 
 void Agent::Log(std::string msg)
@@ -59,7 +63,6 @@ void Agent::BulkLog(std::string msg)
 	payload += R"(}]})";
 	http::cpost(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
-
 
 void Agent::Log(std::chrono::system_clock::time_point ts, std::string msg)
 {
@@ -88,7 +91,8 @@ bool Agent::QueueLog(std::string msg)
 
 void Agent::AsyncLog(std::string msg)
 {
-	auto future = std::async(std::launch::async, static_cast<void(Agent::*)(std::string)>(&Agent::Log), this, msg);
+	auto future = std::async(std::launch::async,
+		static_cast<void(Agent::*)(std::string)>(&Agent::Log), this, msg);
 }
 
 void Agent::Flush()
@@ -109,6 +113,7 @@ void Agent::Flush()
 	}
 	msg.pop_back();
 	msg += "]";
+
 	if (count)
 		BulkLog(msg);
 }

@@ -9,7 +9,7 @@ int main() {
 	// create a registry
 	auto registry = Builder()
 					.LogLevel(Agent::Info)
-					.FlushInterval(5000)
+					.FlushInterval(1000)
 					.MaxBuffer(1000)
 					.Labels({{"key", "value"}})
 					.Build();
@@ -24,7 +24,7 @@ int main() {
 	Parser parser{s};
 
 	for (const auto &m : parser.metrics()) {
-		fmt::print("{}: ", m.metric);
+		fmt::print("{}: ", m.name);
 		for (const auto &[k, v] : m.labels)
 			fmt::print("{} = {}, ", k, v);
 		fmt::print("\b\b  \n");
@@ -34,10 +34,12 @@ int main() {
 	auto &agent = registry.Add();
 
 	// add logs to queue and forcefully flush
-	agent.QueueLog("Hello from foo!");
-	agent.QueueLog("Hello from bar!");
-	agent.QueueLog("Hello from baz!");
-	agent.Flush();
+	for (int i = 0; i < 100; ++i) {
+		agent.QueueLog("Hello from foo!");
+		agent.QueueLog("Hello from bar!");
+		agent.QueueLog("Hello from baz!");
+	}
+	//agent.Flush();
 
 	// create an agent with extended labels
 	auto &other = registry.Add({{"foo", "bar"}});

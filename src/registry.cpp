@@ -3,6 +3,8 @@
 
 #include "common.hpp"
 
+#include <iostream>
+
 namespace loki
 {
 
@@ -16,15 +18,23 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 	, log_level_{log_level}
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
+	/*
 	thread_ = std::thread([this]() {
-		while (!close_request_.load()) {
-			//if (std::chrono::duration(std::chrono::system_clock::now() - last_flush_).count() > flush_interval_) {
+		bool working;
+		while (!close_request_.load() || !working) {
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_flush_).count() > flush_interval_) {
 				for (auto &agent : agents_)
 					agent->Flush();
-				//last_flush_ = std::chrono::system_clock::now();
-			//}
+				last_flush_ = std::chrono::system_clock::now();
+			}
+			// break if agents are done flushing
+			// Done() doesn't lock so it shouldn't be too slow
+			working = false;
+			for (auto &agent : agents_)
+				working |= agent->Done();
 		}
 	});
+	*/
 }
 
 Registry::~Registry()

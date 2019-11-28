@@ -1,8 +1,8 @@
 #ifndef REGISTRY_HPP_
 #define REGISTRY_HPP_
 
-#include <map>
-#include <mutex>
+//#include <map>
+//#include <mutex>
 #include <string>
 
 #include "agent.hpp"

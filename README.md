@@ -1,5 +1,7 @@
 # Loki Client Library for Modern C++
 
+[![CI Status](https://github.com/mircodezorzi/loki-cpp/workflows/Continuous%20Integration/badge.svg)](https://github.com/mircodezorzi/loki-cpp/actions?workflow=Continuous+Integration)
+
 Inspired by [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp).
 
 ## Usage
@@ -68,5 +70,7 @@ make bench # run benchmarks
 
 ## Moving Forward
 
+- *Add support for auth*.
+- *Add snappy support*.
 - Rework automatic flushing thread.
 - Move cmake build from a binary to a shared library.
