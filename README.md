@@ -29,13 +29,11 @@ int main() {
   // create an agent with extended labels
   auto &agent = registry.Add({{"foo", "bar"}});
 
-  // add logs to queue and forcefully flush
-  for (int i = 0; i < 5; ++i) {
-    agent.Infof("Hello, World!");
-    agent.Debugf("Hello, World!");
-    agent.Warnf("Hello, World!");
-    agent.Errorf("Hello, World!");
-  }
+  // add logs to queue and wait for flush
+  agent.Infof("Hello, World!");
+  agent.Debugf("Hello, World!");
+  agent.Warnf("Hello, World!");
+  agent.Errorf("Hello, World!");
 }
 ```
 
