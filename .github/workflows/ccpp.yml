@@ -6,33 +6,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v1
-    - name: dependencies
-      run: |
-        git clone https://github.com/catchorg/Catch2.git
-        cd Catch2
-        cmake -Bbuild -H. -DBUILD_TESTING=OFF
-        sudo cmake --build build/ --target install
-        cd ..
-        git clone https://github.com/fmtlib/fmt.git
-        cd fmt
-        cmake -Bbuild -H.
-        sudo cmake --build build/ --target install
-        cd ..
-        git clone https://github.com/google/benchmark.git
-        git clone https://github.com/google/googletest.git benchmark/googletest
-        cd benchmark
-        cmake -Bbuild -H.
-        sudo cmake --build build/ --target install
-        cd ..
-        mkdir external
-        curl -o external/catch.hpp https://raw.githubusercontent.com/catchorg/Catch2/master/single_include/catch2/catch.hpp
-        sudo apt-get install libcurl4-openssl-dev
-    - name: configure
-      run: cmake .
-    - name: make
-      run: make
-    - name: make check
-      run: make check
+    - name: Docker Build
+      run : make ci

@@ -13,5 +13,15 @@ static void BM_Parser(benchmark::State& state) {
 	}
 }
 
+static void BM_ParserEmpty(benchmark::State& state) {
+	using namespace loki;
+	for (auto _ : state) {
+		Parser parser{""};
+		parser.metrics();
+	}
+}
+
 BENCHMARK(BM_Parser);
+BENCHMARK(BM_ParserEmpty);
+
 BENCHMARK_MAIN();

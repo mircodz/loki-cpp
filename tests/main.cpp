@@ -1,12 +1,13 @@
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "builder.hpp"
 #include "parser.hpp"
 
-TEST_CASE( "Parsers", "[parser]" ) {
+#include <fstream>
+
+TEST_CASE( "Empty", "[parser]" ) {
 	using namespace loki;
 	Parser parser{""};
 	REQUIRE( parser.metrics().size() == 0 );
-
 }

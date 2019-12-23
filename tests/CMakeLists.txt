@@ -1,5 +1,3 @@
-find_package(Catch2 REQUIRED)
-
 include(CTest)
 include(Catch)
 
@@ -7,23 +5,35 @@ file(GLOB SOURCES
   ${PROJECT_SOURCE_DIR}/src/*.cpp
   ${PROJECT_SOURCE_DIR}/tests/*.cpp)
 
+file(GLOB_RECURSE PROTOBUF_GEN
+  ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)
+
 set(HEADERS
   ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/external)
+  ${PROJECT_SOURCE_DIR}/gen)
 
-add_executable(tests ${SOURCES})
+add_executable(tests ${SOURCES} ${PROTOBUF_GEN})
 include_directories(tests INTERFACE ${HEADERS})
 
-find_package(CURL REQUIRED)
-if(CURL_FOUND)
-  include_directories(${CURL_INCLUDE_DIR})
-  target_link_libraries(tests ${CURL_LIBRARIES})
-else(CURL_FOUND)
-  message(FATAL_ERROR "Could not find libcurl")
-endif(CURL_FOUND)
+#find_package(Protobuf REQUIRED)
+#if(PROTOBUF_FOUND)
+  #include_directories(${PROTOBUF_INCLUDE_DIRS})
+  #target_link_libraries(tests ${PROTOBUF_LIBRARIES})
+#else()
+  #message(FATAL_ERROR "Could not find protobof")
+#endif()
 
-target_link_libraries(tests fmt)
-target_link_libraries(tests pthread)
+#find_package(CURL REQUIRED)
+#if(CURL_FOUND)
+  #include_directories(${CURL_INCLUDE_DIR})
+  #target_link_libraries(tests ${CURL_LIBRARIES})
+#else()
+  #message(FATAL_ERROR "Could not find libcurl")
+#endif()
+
+target_link_libraries(tests loki-cpp)
+#target_link_libraries(tests fmt)
+#target_link_libraries(tests snappy)
 
 add_test(tests tests)
 

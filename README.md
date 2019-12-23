@@ -7,53 +7,35 @@ Inspired by [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp).
 ## Usage
 
 ```cpp
-#include "builder.hpp"
-#include "parser.hpp"
-
-#include <fmt/format.h>
+#include <loki/builder.hpp>
+#include <loki/parser.hpp>
 
 int main() {
-    using namespace loki;
+  using namespace loki;
 
-    // create a registry
-    auto registry = Builder()
-                    .LogLevel(Agent::Info)
-                    .FlushInterval(5000)
-                    .MaxBuffer(1000)
-                    .Labels({{"key", "value"}})
-                    .Build();
+  // create a registry
+  auto registry = Builder{}
+                  .LogLevel(Agent::LogLevel::Warn)
+                  .PrintLevel(Agent::LogLevel::Warn)
+                  .Protocol(Agent::Protocol::Protobuf)
+                  .FlushInterval(100)
+                  .MaxBuffer(1000)
+                  .Labels({{"key", "value"}})
+                  .Build();
 
-    // check if loki is up
-    if (!registry.Ready()) return 1;
+  // check if loki is up
+  if (!registry.Ready()) return 1;
 
-    // parse metrics
-    std::string s = registry.Metrics();
-    fmt::print("{}\n", s);
+  // create an agent with extended labels
+  auto &agent = registry.Add({{"foo", "bar"}});
 
-    Parser parser{s};
-
-    for (const auto &m : parser.metrics()) {
-        fmt::print("{}: ", m.metric);
-        for (const auto &[k, v] : m.labels)
-            fmt::print("{} = {}, ", k, v);
-        fmt::print("\b\b  \n");
-    }
-
-    // create an agent with default labels
-    auto &agent = registry.Add();
-
-    // add logs to queue and forcefully flush
-    agent.QueueLog("Hello from foo!");
-    agent.QueueLog("Hello from bar!");
-    agent.QueueLog("Hello from baz!");
-    agent.Flush();
-
-    // create an agent with extended labels
-    auto &other = registry.Add({{"foo", "bar"}});
-
-    // blocking and non-blocking log
-    other.Log("Hello, World!");
-    other.AsyncLog("Hello There!");
+  // add logs to queue and forcefully flush
+  for (int i = 0; i < 5; ++i) {
+    agent.Infof("Hello, World!");
+    agent.Debugf("Hello, World!");
+    agent.Warnf("Hello, World!");
+    agent.Errorf("Hello, World!");
+  }
 }
 ```
 
@@ -62,15 +44,16 @@ int main() {
 ```bash
 mkdir build
 cd build
-cmake ..
-make -j4
+cmake .. -DBUILD_SHARED_LIBS=ON
+make loki-cpp -j4
 make check # run tests
 make bench # run benchmarks
+sudo make install
 ```
 
-## Moving Forward
+## Dependencies
 
-- *Add support for auth*.
-- *Add snappy support*.
-- Rework automatic flushing thread.
-- Move cmake build from a binary to a shared library.
+- fmt
+- libcurl
+- protobuf
+- snappy

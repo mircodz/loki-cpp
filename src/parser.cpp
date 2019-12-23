@@ -51,7 +51,8 @@ void Parser::new_token(Token token, std::string_view value)
 	tokens_.emplace_back(std::make_pair(token, value));
 }
 
-void Parser::parse() {
+void Parser::parse()
+{
 	Metric cur{};
 	cursor_ = 0;
 	while (cursor_ < tokens_.size()) {
