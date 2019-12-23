@@ -15,25 +15,7 @@ set(HEADERS
 add_executable(tests ${SOURCES} ${PROTOBUF_GEN})
 include_directories(tests INTERFACE ${HEADERS})
 
-#find_package(Protobuf REQUIRED)
-#if(PROTOBUF_FOUND)
-  #include_directories(${PROTOBUF_INCLUDE_DIRS})
-  #target_link_libraries(tests ${PROTOBUF_LIBRARIES})
-#else()
-  #message(FATAL_ERROR "Could not find protobof")
-#endif()
-
-#find_package(CURL REQUIRED)
-#if(CURL_FOUND)
-  #include_directories(${CURL_INCLUDE_DIR})
-  #target_link_libraries(tests ${CURL_LIBRARIES})
-#else()
-  #message(FATAL_ERROR "Could not find libcurl")
-#endif()
-
 target_link_libraries(tests loki-cpp)
-#target_link_libraries(tests fmt)
-#target_link_libraries(tests snappy)
 
 add_test(tests tests)
 
