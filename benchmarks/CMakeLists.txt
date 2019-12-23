@@ -1,6 +1,7 @@
 file(GLOB SOURCES
-  ${PROJECT_SOURCE_DIR}/src/*.cpp
-  ${PROJECT_SOURCE_DIR}/benchmarks/*.cpp)
+  ${PROJECT_SOURCE_DIR}/src/*
+  ${PROJECT_SOURCE_DIR}/src/detail/*
+  ${PROJECT_SOURCE_DIR}/benchmarks/*)
 
 file(GLOB_RECURSE PROTOBUF_GEN
   ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)

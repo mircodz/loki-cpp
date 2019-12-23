@@ -1,10 +1,13 @@
-#include "common.hpp"
+#include "detail/utils.hpp"
 
 #include <chrono>
 
 #include <fmt/format.h>
 
 namespace loki
+{
+
+namespace detail
 {
 
 timespec now()
@@ -30,14 +33,14 @@ void print(const std::string &line)
 namespace http
 {
 
-Response post(CURL *curl, const std::string &uri, const std::string &payload, ContentType content_type)
-{
-	return request(curl, RequestMethod::Post, uri, payload, content_type);
-}
-
 Response get(CURL *curl, const std::string &uri)
 {
 	return request(curl, RequestMethod::Get, uri, std::string{}, ContentType::Raw);
+}
+
+Response post(CURL *curl, const std::string &uri, const std::string &payload, ContentType content_type)
+{
+	return request(curl, RequestMethod::Post, uri, payload, content_type);
 }
 
 Response request(CURL *curl, RequestMethod method, const std::string &uri, const std::string &payload, ContentType content_type)
@@ -45,7 +48,7 @@ Response request(CURL *curl, RequestMethod method, const std::string &uri, const
 	Response r;
 
 	curl_easy_setopt(curl, CURLOPT_URL, uri.data());
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, detail::writer);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &r.body);
 
 	if (method == RequestMethod::Post) {
@@ -65,9 +68,6 @@ Response request(CURL *curl, RequestMethod method, const std::string &uri, const
 	return r;
 }
 
-namespace detail
-{
-
 size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data)
 {
 	if (data == nullptr)
@@ -76,8 +76,8 @@ size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data)
 	return size * nmemb;
 }
 
-} // namespace detail
-
 } // namespace http
+
+} // namespace detail
 
 } // namespace loki

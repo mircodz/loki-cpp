@@ -1,7 +1,7 @@
 #include "registry.hpp"
 #include "agent.hpp"
 
-#include "common.hpp"
+#include "detail/utils.hpp"
 
 #include <iostream>
 
@@ -53,14 +53,14 @@ Registry::~Registry()
 bool Registry::Ready() const
 {
 	CURL *curl = curl_easy_init();
-	return http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
+	return detail::http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
 	curl_easy_cleanup(curl);
 }
 
 std::string Registry::Metrics() const
 {
 	CURL *curl = curl_easy_init();
-	return http::get(curl, "http://127.0.0.1:3100/metrics").body;
+	return detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
 	curl_easy_cleanup(curl);
 }
 

@@ -2,8 +2,9 @@ include(CTest)
 include(Catch)
 
 file(GLOB SOURCES
-  ${PROJECT_SOURCE_DIR}/src/*.cpp
-  ${PROJECT_SOURCE_DIR}/tests/*.cpp)
+  ${PROJECT_SOURCE_DIR}/src/*
+  ${PROJECT_SOURCE_DIR}/src/detail/*
+  ${PROJECT_SOURCE_DIR}/tests/*)
 
 file(GLOB_RECURSE PROTOBUF_GEN
   ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)

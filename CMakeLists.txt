@@ -37,7 +37,8 @@ foreach(proto ${PROTOBUF_PROTO})
 endforeach()
 
 file(GLOB SOURCES
-  ${PROJECT_SOURCE_DIR}/src/*.cpp)
+  ${PROJECT_SOURCE_DIR}/src/*
+  ${PROJECT_SOURCE_DIR}/src/detail/*)
 
 file(GLOB_RECURSE PROTOBUF_GEN
   ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)
@@ -53,7 +54,7 @@ target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
 set_target_properties(loki-cpp PROPERTIES
   VERSION ${PROJECT_VERSION}
   SOVERSION 1
-  PUBLIC_HEADER "include/agent.hpp;include/common.hpp;include/parser.hpp;include/builder.hpp;include/registry.hpp")
+  PUBLIC_HEADER "include/agent.hpp;include/detail/utils.hpp;include/parser.hpp;include/builder.hpp;include/registry.hpp")
 
 find_package(Protobuf REQUIRED)
 if(PROTOBUF_FOUND)

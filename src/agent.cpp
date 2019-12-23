@@ -1,10 +1,9 @@
-#include <future>
-
 #include "agent.hpp"
-#include "common.hpp"
 
-#include "logproto.pb.h"
 #include <snappy.h>
+
+#include "detail/utils.hpp"
+#include "logproto.pb.h"
 
 namespace loki
 {
@@ -71,11 +70,11 @@ void Agent::Log(const std::string &line, LogLevel level)
 	mutex_.lock();
 
 	if (log_level_ >= level) {
-		logs_.emplace(std::make_pair(now(), line));
+		logs_.emplace(std::make_pair(detail::now(), line));
 	}
 
 	if (print_level_ >= level) {
-		print(line);
+		detail::print(line);
 	}
 
 	if (logs_.size() >= max_buffer_) {
@@ -107,7 +106,7 @@ void Agent::FlushJson()
 	while (!logs_.empty()) {
 		const auto &[t, s] = logs_.front();
 		line += R"([")";
-		line += to_string(t);
+		line += detail::to_string(t);
 		line += R"(",")";
 		line += s;
 		line += R"("],)";
@@ -124,7 +123,7 @@ void Agent::FlushJson()
 		payload += R"(,"values":)";
 		payload += line;
 		payload += R"(}]})";
-		http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
+		detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 	}
 }
 
@@ -155,7 +154,7 @@ void Agent::FlushProto()
 
 	push_request.SerializeToString(&payload);
 	snappy::Compress(payload.data(), payload.size(), &compressed);
-	http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
+	detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
 }
 
 } // namespace loki
