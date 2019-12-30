@@ -1,5 +1,5 @@
-#ifndef REGISTRY_HPP_
-#define REGISTRY_HPP_
+#ifndef LOKI_REGISTRY_HPP_
+#define LOKI_REGISTRY_HPP_
 
 #include "agent.hpp"
 
@@ -18,7 +18,8 @@ public:
 		  int max_buffer,
 		  Agent::LogLevel log_level,
 		  Agent::LogLevel print_level,
-		  Agent::Protocol protocol);
+		  Agent::Protocol protocol,
+		  std::array<Agent::TermColor, 4> colors);
 	~Registry();
 
 	bool Ready() const;
@@ -36,6 +37,8 @@ private:
 	Agent::LogLevel print_level_;
 	Agent::Protocol protocol_;
 
+	std::array<Agent::TermColor, 4> colors_;
+
 	std::vector<std::unique_ptr<Agent>> agents_;
 	std::mutex mutex_;
 
@@ -52,4 +55,4 @@ private:
 
 } // namespace loki
 
-#endif /* REGISTRY_HPP_ */
+#endif /* LOKI_REGISTRY_HPP_ */

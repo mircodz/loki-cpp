@@ -8,8 +8,12 @@ Builder::Builder()
 	, flush_interval_{5000}
 	, max_buffer_{10000}
 	, log_level_{Agent::LogLevel::Info}
-	, print_level_{Agent::LogLevel::Info}
-	, protocol_{Agent::Protocol::Protobuf} {}
+	, print_level_{Agent::LogLevel::Disable}
+	, protocol_{Agent::Protocol::Protobuf}
+	, colors_{{ Agent::TermColor::White,
+				Agent::TermColor::White,
+				Agent::TermColor::White,
+				Agent::TermColor::White  }} {}
 
 Builder& Builder::Labels(const std::map<std::string, std::string> &labels)
 {
@@ -47,9 +51,15 @@ Builder& Builder::Protocol(Agent::Protocol protocol)
 	return *this;
 }
 
+Builder& Builder::Colorize(Agent::LogLevel level, Agent::TermColor color)
+{
+	colors_[static_cast<int>(level)] = color;
+	return *this;
+}
+
 Registry Builder::Build()
 {
-	return Registry{labels_, flush_interval_, max_buffer_, log_level_, print_level_, protocol_};
+	return Registry{labels_, flush_interval_, max_buffer_, log_level_, print_level_, protocol_, colors_};
 }
 
 } // namespace loki

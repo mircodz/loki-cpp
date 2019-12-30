@@ -17,6 +17,7 @@ public:
 	Builder& LogLevel(Agent::LogLevel log_level);
 	Builder& PrintLevel(Agent::LogLevel print_level);
 	Builder& Protocol(Agent::Protocol protocol);
+	Builder& Colorize(Agent::LogLevel level, Agent::TermColor color);
 
 	Registry Build();
 
@@ -27,6 +28,8 @@ private:
 	Agent::LogLevel log_level_;
 	Agent::LogLevel print_level_;
 	Agent::Protocol protocol_;
+
+	std::array<Agent::TermColor, 4> colors_;
 
 };
 

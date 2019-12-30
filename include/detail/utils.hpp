@@ -10,9 +10,7 @@ namespace loki
 namespace detail
 {
 
-timespec now();
 std::string to_string(const timespec &t);
-void print(const std::string &line);
 
 namespace http
 {

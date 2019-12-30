@@ -10,24 +10,9 @@ namespace loki
 namespace detail
 {
 
-timespec now()
-{
-	auto t   = std::chrono::system_clock::now();
-	auto sec = std::chrono::time_point_cast<std::chrono::seconds>(t);
-	auto ns  = std::chrono::time_point_cast<
-		std::chrono::nanoseconds>(t) - std::chrono::time_point_cast<std::chrono::nanoseconds>(sec);
-
-	return timespec{sec.time_since_epoch().count(), ns.count()};
-}
-
 std::string to_string(const timespec &t)
 {
 	return std::to_string(t.tv_sec * 1000 * 1000 * 1000 + t.tv_nsec);
-}
-
-void print(const std::string &line)
-{
-	fmt::print(line + "\n");
 }
 
 namespace http

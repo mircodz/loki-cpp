@@ -13,13 +13,15 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 				   int max_buffer,
 				   Agent::LogLevel log_level,
 				   Agent::LogLevel print_level,
-				   Agent::Protocol protocol)
+				   Agent::Protocol protocol,
+				   std::array<Agent::TermColor, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
 	, print_level_{print_level}
 	, protocol_{protocol}
+	, colors_{colors}
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	thread_ = std::thread([this]() {
@@ -69,7 +71,7 @@ Agent &Registry::Add(std::map<std::string, std::string> labels)
 	std::lock_guard<std::mutex> lock{mutex_};
 	for (const auto &p : labels_)
 		labels.emplace(p);
-	auto agent = std::make_unique<Agent>(labels, flush_interval_, max_buffer_, log_level_, print_level_, protocol_);
+	auto agent = std::make_unique<Agent>(labels, flush_interval_, max_buffer_, log_level_, print_level_, protocol_, colors_);
 	auto &ref = *agent;
 	agents_.push_back(std::move(agent));
 	return ref;

@@ -4,6 +4,8 @@
 
 #include "detail/utils.hpp"
 #include "logproto.pb.h"
+#include <ctime>
+#include <cstdio>
 
 namespace loki
 {
@@ -13,13 +15,15 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int max_buffer,
 			 Agent::LogLevel log_level,
 			 Agent::LogLevel print_level,
-			 Agent::Protocol protocol)
+			 Agent::Protocol protocol,
+			 std::array<Agent::TermColor, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
 	, print_level_{print_level}
 	, protocol_{protocol}
+	, colors_{colors}
 {
 	switch (protocol_) {
 	case Protocol::Protobuf:
@@ -69,15 +73,36 @@ void Agent::Log(const std::string &line, LogLevel level)
 {
 	mutex_.lock();
 
-	if (log_level_ >= level) {
-		logs_.emplace(std::make_pair(detail::now(), line));
+	timespec now;
+	std::timespec_get(&now, TIME_UTC);
+
+	if (log_level_ <= level) {
+		logs_.emplace(std::make_pair(now, line));
 	}
 
-	if (print_level_ >= level) {
-		detail::print(line);
+	// moving this into a separate function?
+	// adding the possibilty to define a custom callback?
+	if (print_level_ <= level) {
+		auto repr = [](LogLevel level) -> std::string {
+			switch (level) {
+			case LogLevel::Debug:   return "[DEBUG]";
+			case LogLevel::Info:    return "[ INFO]";
+			case LogLevel::Warn:    return "[ WARN]";
+			case LogLevel::Error:   return "[ERROR]";
+			case LogLevel::Disable: return "";
+			}
+		};
+
+		auto color = [this](LogLevel level) -> int {
+			return static_cast<int>(colors_[static_cast<int>(level)]);
+		};
+
+		char buf[100];
+		std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&now.tv_sec));
+		fmt::print("\033[{}m{}.{} {} {}\033[0m\n", color(level), std::string(buf), now.tv_nsec, repr(level), line);
 	}
 
-	if (logs_.size() >= max_buffer_) {
+	if (logs_.size() <= max_buffer_) {
 		mutex_.unlock();
 		Flush();
 	}
@@ -108,7 +133,19 @@ void Agent::FlushJson()
 		line += R"([")";
 		line += detail::to_string(t);
 		line += R"(",")";
-		line += s;
+		for (const auto &c : s) {
+			switch (c) {
+			case '\\':
+				line += "\\";
+				break;
+			case '"':
+				line += "\"";
+				break;
+			default:
+				line += s;
+				break;
+			}
+		}
 		line += R"("],)";
 		logs_.pop();
 		count++;
@@ -129,10 +166,12 @@ void Agent::FlushJson()
 
 void Agent::FlushProto()
 {
+	using namespace logproto;
+
 	std::lock_guard<std::mutex> lock{mutex_};
 
-	using namespace logproto;
-	std::string payload, compressed;
+	std::string payload;
+	std::string compressed;
 	PushRequest push_request;
 
 	auto *stream = push_request.add_streams();
