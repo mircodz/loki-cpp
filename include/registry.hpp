@@ -1,6 +1,9 @@
 #ifndef LOKI_REGISTRY_HPP_
 #define LOKI_REGISTRY_HPP_
 
+#include <atomic>
+#include <thread>
+
 #include "agent.hpp"
 
 namespace loki

@@ -4,7 +4,7 @@ namespace loki
 {
 
 Builder::Builder()
-	: labels_{{}}
+	: labels_{}
 	, flush_interval_{5000}
 	, max_buffer_{10000}
 	, log_level_{Agent::LogLevel::Info}

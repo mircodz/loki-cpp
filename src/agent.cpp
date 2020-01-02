@@ -61,6 +61,7 @@ Agent::~Agent()
 
 bool Agent::Done()
 {
+	std::lock_guard<std::mutex> lock{mutex_};
 	return !logs_.empty();
 }
 
@@ -105,9 +106,9 @@ void Agent::Log(const std::string &line, LogLevel level)
 	if (logs_.size() <= max_buffer_) {
 		mutex_.unlock();
 		Flush();
+	} else {
+		mutex_.unlock();
 	}
-
-	mutex_.unlock();
 }
 
 void Agent::Flush()

@@ -25,8 +25,7 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	thread_ = std::thread([this]() {
-		bool working = true;
-		while (!close_request_.load() || !working) {
+		while (!close_request_.load()) {
 			// wait some time between flushes, force when receiving a close request
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::system_clock::now() - last_flush_).count() > flush_interval_ || close_request_.load()) {
@@ -35,10 +34,6 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 						agent->Flush();
 				last_flush_ = std::chrono::system_clock::now();
 			}
-			// break if agents are done flushing
-			working = false;
-			for (auto &agent : agents_)
-				working |= agent->Done();
 		}
 	});
 }
