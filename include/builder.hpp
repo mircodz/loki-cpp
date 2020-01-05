@@ -14,10 +14,10 @@ public:
 	Builder& Labels(const std::map<std::string, std::string> &labels);
 	Builder& FlushInterval(int flush_interval);
 	Builder& MaxBuffer(int max_buffer);
-	Builder& LogLevel(Agent::LogLevel log_level);
-	Builder& PrintLevel(Agent::LogLevel print_level);
-	Builder& Protocol(Agent::Protocol protocol);
-	Builder& Colorize(Agent::LogLevel level, Agent::TermColor color);
+	Builder& LogLevel(Level log_level);
+	Builder& PrintLevel(Level print_level);
+	Builder& FlushProtocol(Protocol protocol);
+	Builder& Colorize(Level level, TermColor color);
 
 	Registry Build();
 
@@ -25,11 +25,11 @@ private:
 	std::map<std::string, std::string> labels_;
 	int flush_interval_;
 	int max_buffer_;
-	Agent::LogLevel log_level_;
-	Agent::LogLevel print_level_;
-	Agent::Protocol protocol_;
+	Level log_level_;
+	Level print_level_;
+	Protocol protocol_;
 
-	std::array<Agent::TermColor, 4> colors_;
+	std::array<TermColor, 4> colors_;
 
 };
 

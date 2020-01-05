@@ -19,10 +19,10 @@ public:
 	Registry(const std::map<std::string, std::string> &labels,
 		  int flush_interval,
 		  int max_buffer,
-		  Agent::LogLevel log_level,
-		  Agent::LogLevel print_level,
-		  Agent::Protocol protocol,
-		  std::array<Agent::TermColor, 4> colors);
+		  Level log_level,
+		  Level print_level,
+		  Protocol protocol,
+		  std::array<TermColor, 4> colors);
 	~Registry();
 
 	bool Ready() const;
@@ -36,11 +36,11 @@ private:
 	std::map<std::string, std::string> labels_;
 	int flush_interval_;
 	int max_buffer_;
-	Agent::LogLevel log_level_;
-	Agent::LogLevel print_level_;
-	Agent::Protocol protocol_;
+	Level log_level_;
+	Level print_level_;
+	Protocol protocol_;
 
-	std::array<Agent::TermColor, 4> colors_;
+	std::array<TermColor, 4> colors_;
 
 	std::vector<std::unique_ptr<Agent>> agents_;
 	std::mutex mutex_;

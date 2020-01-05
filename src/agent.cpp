@@ -13,10 +13,10 @@ namespace loki
 Agent::Agent(const std::map<std::string, std::string> &labels,
 			 int flush_interval,
 			 int max_buffer,
-			 Agent::LogLevel log_level,
-			 Agent::LogLevel print_level,
-			 Agent::Protocol protocol,
-			 std::array<Agent::TermColor, 4> colors)
+			 Level log_level,
+			 Level print_level,
+			 Protocol protocol,
+			 std::array<TermColor, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
@@ -65,12 +65,12 @@ bool Agent::Done()
 	return !logs_.empty();
 }
 
-void Agent::Log(fmt::string_view format, fmt::format_args args, Agent::LogLevel level)
+void Agent::Log(fmt::string_view format, fmt::format_args args, Level level)
 {
 	Log(fmt::vformat(format, args), level);
 }
 
-void Agent::Log(const std::string &line, LogLevel level)
+void Agent::Log(const std::string &line, Level level)
 {
 	mutex_.lock();
 
@@ -84,17 +84,17 @@ void Agent::Log(const std::string &line, LogLevel level)
 	// moving this into a separate function?
 	// adding the possibilty to define a custom callback?
 	if (print_level_ <= level) {
-		auto repr = [](LogLevel level) -> std::string {
+		auto repr = [](Level level) -> std::string {
 			switch (level) {
-			case LogLevel::Debug:   return "[DEBUG]";
-			case LogLevel::Info:    return "[ INFO]";
-			case LogLevel::Warn:    return "[ WARN]";
-			case LogLevel::Error:   return "[ERROR]";
-			case LogLevel::Disable: return "";
+			case Level::Debug:   return "[DEBUG]";
+			case Level::Info:    return "[ INFO]";
+			case Level::Warn:    return "[ WARN]";
+			case Level::Error:   return "[ERROR]";
+			case Level::Disable: return "";
 			}
 		};
 
-		auto color = [this](LogLevel level) -> int {
+		auto color = [this](Level level) -> int {
 			return static_cast<int>(colors_[static_cast<int>(level)]);
 		};
 

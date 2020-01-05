@@ -7,13 +7,13 @@ Builder::Builder()
 	: labels_{}
 	, flush_interval_{5000}
 	, max_buffer_{10000}
-	, log_level_{Agent::LogLevel::Info}
-	, print_level_{Agent::LogLevel::Disable}
-	, protocol_{Agent::Protocol::Protobuf}
-	, colors_{{ Agent::TermColor::White,
-				Agent::TermColor::White,
-				Agent::TermColor::White,
-				Agent::TermColor::White  }} {}
+	, log_level_{Level::Info}
+	, print_level_{Level::Disable}
+	, protocol_{Protocol::Protobuf}
+	, colors_{{ TermColor::White,
+				TermColor::White,
+				TermColor::White,
+				TermColor::White  }} {}
 
 Builder& Builder::Labels(const std::map<std::string, std::string> &labels)
 {
@@ -33,25 +33,25 @@ Builder& Builder::MaxBuffer(int max_buffer)
 	return *this;
 }
 
-Builder& Builder::LogLevel(Agent::LogLevel log_level)
+Builder& Builder::LogLevel(Level log_level)
 {
 	log_level_ = log_level;
 	return *this;
 }
 
-Builder& Builder::PrintLevel(Agent::LogLevel print_level)
+Builder& Builder::PrintLevel(Level print_level)
 {
 	print_level_ = print_level;
 	return *this;
 }
 
-Builder& Builder::Protocol(Agent::Protocol protocol)
+Builder& Builder::FlushProtocol(Protocol protocol)
 {
 	protocol_ = protocol;
 	return *this;
 }
 
-Builder& Builder::Colorize(Agent::LogLevel level, Agent::TermColor color)
+Builder& Builder::Colorize(Level level, TermColor color)
 {
 	colors_[static_cast<int>(level)] = color;
 	return *this;

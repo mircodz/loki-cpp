@@ -11,10 +11,10 @@ namespace loki
 Registry::Registry(const std::map<std::string, std::string> &labels,
 				   int flush_interval,
 				   int max_buffer,
-				   Agent::LogLevel log_level,
-				   Agent::LogLevel print_level,
-				   Agent::Protocol protocol,
-				   std::array<Agent::TermColor, 4> colors)
+				   Level log_level,
+				   Level print_level,
+				   Protocol protocol,
+				   std::array<TermColor, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}

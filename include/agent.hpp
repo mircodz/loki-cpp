@@ -11,45 +11,44 @@
 namespace loki
 {
 
+/// ASCII escape codes
+enum class TermColor : int {
+	Black   =  30,
+	Red     =  31,
+	Green   =  32,
+	Yellow  =  33,
+	Blue    =  34,
+	Magenta =  35,
+	Cyan    =  36,
+	White   =  37
+};
+
+enum class Level : int {
+	Debug = 0,
+	Info  = 1,
+	Warn  = 2,
+	Error = 3,
+
+	// default printing level
+	Disable = 4
+};
+
+/// Protocol to be used when flushing logs to Loki
+enum class Protocol : int {
+	Protobuf, Json
+};
+
 class Agent
 {
 
 public:
-
-	/// ASCII escape codes
-	enum class TermColor : int {
-		Black   =  30,
-		Red     =  31,
-		Green   =  32,
-		Yellow  =  33,
-		Blue    =  34,
-		Magenta =  35,
-		Cyan    =  36,
-		White   =  37
-	};
-
-	enum class LogLevel {
-		Debug = 0,
-		Info  = 1,
-		Warn  = 2,
-		Error = 3,
-
-		// default printing level
-		Disable = 4
-	};
-
-	/// Protocol to be used when flushing logs to Loki
-	enum class Protocol {
-		Protobuf, Json
-	};
-
 	Agent(const std::map<std::string, std::string> &labels,
 		  int flush_interval,
 		  int max_buffer,
-		  LogLevel log_level,
-		  LogLevel print_level,
+		  Level log_level,
+		  Level print_level,
 		  Protocol protocol,
-		  std::array<Agent::TermColor, 4> colors);
+		  std::array<TermColor, 4> colors);
 
 	~Agent();
 
@@ -58,25 +57,25 @@ public:
 	template <typename... Args>
 	void Debugf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), LogLevel::Debug);
+		Log(format, fmt::make_format_args(args...), Level::Debug);
 	}
 
 	template <typename... Args>
 	void Infof(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), LogLevel::Info);
+		Log(format, fmt::make_format_args(args...), Level::Info);
 	}
 
 	template <typename... Args>
 	void Warnf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), LogLevel::Warn);
+		Log(format, fmt::make_format_args(args...), Level::Warn);
 	}
 
 	template <typename... Args>
 	void Errorf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), LogLevel::Error);
+		Log(format, fmt::make_format_args(args...), Level::Error);
 	}
 
 	void Flush();
@@ -85,8 +84,8 @@ private:
 	std::map<std::string, std::string> labels_;
 	int flush_interval_;
 	int max_buffer_;
-	LogLevel log_level_;
-	LogLevel print_level_;
+	Level log_level_;
+	Level print_level_;
 	Protocol protocol_;
 	std::string compiled_labels_;
 
@@ -98,8 +97,8 @@ private:
 
 	CURL *curl_;
 
-	void Log(fmt::string_view format, fmt::format_args args, LogLevel level);
-	void Log(const std::string &line, LogLevel level);
+	void Log(fmt::string_view format, fmt::format_args args, Level level);
+	void Log(const std::string &line, Level level);
 	void FlushJson();
 	void FlushProto();
 
