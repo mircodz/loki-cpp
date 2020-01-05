@@ -15,9 +15,11 @@ int main() {
 
   // create a registry
   auto registry = Builder{}
-                  .LogLevel(Agent::LogLevel::Warn)
-                  .PrintLevel(Agent::LogLevel::Warn)
-                  .Protocol(Agent::Protocol::Protobuf)
+                  .LogLevel(Level::Warn)
+                  .PrintLevel(Level::Debug)
+                  .FlushProtocol(Protocol::Protobuf)
+                  .Colorize(Level::Warn, TermColor::Yellow)
+                  .Colorize(Level::Error, TermColor::Red)
                   .FlushInterval(100)
                   .MaxBuffer(1000)
                   .Labels({{"key", "value"}})
@@ -30,23 +32,38 @@ int main() {
   auto &agent = registry.Add({{"foo", "bar"}});
 
   // add logs to queue and wait for flush
-  agent.Infof("Hello, World!");
-  agent.Debugf("Hello, World!");
-  agent.Warnf("Hello, World!");
-  agent.Errorf("Hello, World!");
+  agent.Debugf("Hello, {}!", "Debug");
+  agent.Infof("Hello, {}!", "Info");
+  agent.Warnf("Hello, {}!", "Warn");
+  agent.Errorf("Hello, {}!", "Error");
 }
 ```
 
-## Building
+### Metrics Parser
+
+```cpp
+std::string s = registry.Metrics();
+Parser parser{s};
+for (const auto metric : parser.metrics())
+   // ...
+```
+
+## Installation
 
 ```bash
 mkdir build
 cd build
 cmake .. -DBUILD_SHARED_LIBS=ON
-make loki-cpp -j4
+make loki-cpp -j4 -DWITH_LOGGING
 make check # run tests
 make bench # run benchmarks
 sudo make install
+```
+
+## Building with loki-cpp
+
+```bash
+g++ example.cpp -std=c++17 -lloki-cpp
 ```
 
 ## Dependencies

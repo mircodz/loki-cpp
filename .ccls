@@ -1,5 +1,5 @@
 clang
--std=c++2a
+-std=c++17
 %cpp -lfmt
 %hpp -lfmt
 -Iinclude
