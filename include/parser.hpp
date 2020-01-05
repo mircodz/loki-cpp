@@ -19,25 +19,12 @@ struct Metric
 class Parser
 {
 public:
-	Parser(std::string_view source)
-		: source_(source)
-		, cursor_(0)
-	{
-		tokenize();
-		parse();
-	}
-
-	auto metrics()
-	{
-		return metrics_;
-	}
+	Parser(std::string_view source);
+	std::vector<Metric> metrics();
 
 	/// move cursor by `i` steps
 	/// \brief hello there
-	void step(int i)
-	{
-		cursor_ += i;
-	}
+	void step(int i);
 
 	enum Token
 	{ Attribute

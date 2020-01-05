@@ -5,6 +5,24 @@
 namespace loki
 {
 
+Parser::Parser(std::string_view source)
+	: source_(source)
+	, cursor_(0)
+{
+	tokenize();
+	parse();
+}
+
+std::vector<Metric> Parser::metrics()
+{
+	return metrics_;
+}
+
+void Parser::step(int i)
+{
+	cursor_ += i;
+}
+
 void Parser::tokenize()
 {
 	while (cursor_ < source_.size()) {
