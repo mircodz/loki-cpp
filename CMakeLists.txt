@@ -1,22 +1,28 @@
 cmake_minimum_required(VERSION 3.12.4)
 
-project(loki-cpp VERSION 0.1.0)
+project(loki-cpp VERSION 0.1.1)
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
+option(UNIT_TESTING "Build unit testing" OFF)
+option(BENCHMARKS   "Build benchmarks"   OFF)
 
 set(CMAKE_CXX_STANDARD   17)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-find_package(benchmark REQUIRED)
-if(benchmark_FOUND)
-  add_subdirectory(benchmarks)
-else()
+if(UNIT_TESTING)
+  find_package(benchmark REQUIRED)
+  if(benchmark_FOUND)
+    add_subdirectory(benchmarks)
+  else()
+  endif()
 endif()
 
-find_package(Catch2 REQUIRED)
-if(TARGET Catch2::Catch2)
-  add_subdirectory(tests)
-else()
+if(BENCHMARKS)
+  find_package(Catch2 REQUIRED)
+  if(TARGET Catch2::Catch2)
+    add_subdirectory(tests)
+  else()
+  endif()
 endif()
 
 set(PROTOBUF_PROTO
@@ -49,7 +55,7 @@ set(HEADERS
 
 add_library(loki-cpp ${SOURCES} ${PROTOBUF_GEN})
 target_include_directories(loki-cpp PRIVATE ${HEADERS})
-target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
+target_compile_options(loki-cpp PRIVATE -Wall -Wextra -ggdb3)
 
 set_target_properties(loki-cpp PROPERTIES
   VERSION ${PROJECT_VERSION}
