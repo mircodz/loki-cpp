@@ -9,7 +9,7 @@ RUN su docker -c 'yay -S --noprogressbar --noconfirm benchmark'
 
 ADD . /loki-cpp
 WORKDIR /loki-cpp
-RUN cmake -Bbuild -H.
+RUN cmake -Bbuild -H. -DBUILD_TESTS=ON
 RUN cmake --build build --target loki-cpp -- -j4
 RUN cmake --build build --target install
 RUN cmake --build build --target check    -- -j4

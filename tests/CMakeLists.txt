@@ -1,25 +1,22 @@
-include(CTest)
-include(Catch)
+find_package(Catch2 REQUIRED)
+if(TARGET Catch2::Catch2)
 
-file(GLOB SOURCES
-  ${PROJECT_SOURCE_DIR}/src/*
-  ${PROJECT_SOURCE_DIR}/src/detail/*
-  ${PROJECT_SOURCE_DIR}/tests/*)
+  include(CTest)
+  include(Catch)
 
-file(GLOB_RECURSE PROTOBUF_GEN
-  ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)
+  file(GLOB SOURCES
+    ${PROJECT_SOURCE_DIR}/tests/main.cpp
+    ${PROJECT_SOURCE_DIR}/tests/parser.cpp)
 
-set(HEADERS
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/gen)
+  add_executable(tests ${SOURCES})
+  include_directories(tests PRIVATE ${HEADERS})
 
-add_executable(tests ${SOURCES} ${PROTOBUF_GEN})
-include_directories(tests INTERFACE ${HEADERS})
+  target_link_libraries(tests loki-cpp)
+  add_test(tests tests)
 
-target_link_libraries(tests loki-cpp)
+  add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS tests)
 
-add_test(tests tests)
-
-add_custom_target(check
-  COMMAND ${CMAKE_CTEST_COMMAND}
-  DEPENDS tests)
+else()
+endif()

@@ -1,71 +1,74 @@
 cmake_minimum_required(VERSION 3.12.4)
+project(loki-cpp VERSION 0.1.2)
 
-project(loki-cpp VERSION 0.1.1)
+# CMake Settings
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
+# Project Settings
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
-option(UNIT_TESTING "Build unit testing" OFF)
-option(BENCHMARKS   "Build benchmarks"   OFF)
+option(BUILD_TESTS       "Build unit testing"        OFF)
+option(BUILD_BENCHMARKS  "Build benchmarks"          OFF)
 
+# Compiler Settings
 set(CMAKE_CXX_STANDARD   17)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-if(UNIT_TESTING)
-  find_package(benchmark REQUIRED)
-  if(benchmark_FOUND)
-    add_subdirectory(benchmarks)
-  else()
-  endif()
+if(BUILD_TESTS)
+  add_subdirectory(tests)
 endif()
 
-if(BENCHMARKS)
-  find_package(Catch2 REQUIRED)
-  if(TARGET Catch2::Catch2)
-    add_subdirectory(tests)
-  else()
-  endif()
+if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
 endif()
-
-set(PROTOBUF_PROTO
-  logproto.proto
-  google/protobuf/timestamp.proto
-  google/protobuf/descriptor.proto
-  github.com/gogo/protobuf/gogoproto/gogo.proto)
-
-foreach(proto ${PROTOBUF_PROTO})
-  execute_process(
-    COMMAND protoc --cpp_out=${PROJECT_SOURCE_DIR}/gen
-                   --proto_path=${PROJECT_SOURCE_DIR}/proto
-                   ${proto}
-    RESULT_VARIABLE result)
-  if(${result})
-    message(FATAL_ERROR "Error compiling protobuf schemas.")
-  endif()
-endforeach()
 
 file(GLOB SOURCES
-  ${PROJECT_SOURCE_DIR}/src/*
-  ${PROJECT_SOURCE_DIR}/src/detail/*)
-
-file(GLOB_RECURSE PROTOBUF_GEN
-  ${PROJECT_SOURCE_DIR}/gen/*.pb.cc)
+  ${PROJECT_SOURCE_DIR}/src/builder.cpp
+  ${PROJECT_SOURCE_DIR}/src/registry.cpp
+  ${PROJECT_SOURCE_DIR}/src/agent.cpp
+  ${PROJECT_SOURCE_DIR}/src/parser.cpp
+  ${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
+  ${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
+  ${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc
+  ${PROJECT_SOURCE_DIR}/gen/google/protobuf/timestamp.pb.cc
+  ${PROJECT_SOURCE_DIR}/gen/logproto.pb.cc)
 
 set(HEADERS
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/gen)
 
-add_library(loki-cpp ${SOURCES} ${PROTOBUF_GEN})
+add_library(loki-cpp ${SOURCES})
 target_include_directories(loki-cpp PRIVATE ${HEADERS})
-target_compile_options(loki-cpp PRIVATE -Wall -Wextra -ggdb3)
+target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
 
 set_target_properties(loki-cpp PROPERTIES
   VERSION ${PROJECT_VERSION}
   SOVERSION 1
-  PUBLIC_HEADER "include/agent.hpp;include/detail/utils.hpp;include/parser.hpp;include/builder.hpp;include/registry.hpp")
+  PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp")
 
 find_package(Protobuf REQUIRED)
 if(PROTOBUF_FOUND)
   include_directories(${PROTOBUF_INCLUDE_DIRS})
   target_link_libraries(loki-cpp ${PROTOBUF_LIBRARIES})
+  function(compile_proto _file)
+    execute_process(
+      COMMAND protoc --cpp_out=${PROJECT_SOURCE_DIR}/gen
+                     --proto_path=${PROJECT_SOURCE_DIR}/proto
+                     ${_file}
+      RESULT_VARIABLE result)
+    if(${result})
+      message(FATAL_ERROR "Error compiling protobuf schemas.")
+    endif()
+  endfunction()
+
+  set(PROTOBUF_PROTO
+    github.com/gogo/protobuf/gogoproto/gogo.proto
+    google/protobuf/descriptor.proto
+    google/protobuf/timestamp.proto
+    logproto.proto)
+
+  foreach(_file ${PROTOBUF_PROTO})
+    compile_proto(${_file})
+  endforeach()
 else()
   message(FATAL_ERROR "Could not find protobof")
 endif()
@@ -84,8 +87,8 @@ target_link_libraries(loki-cpp snappy)
 
 install(TARGETS loki-cpp
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION /usr/local/include/loki)
+  PUBLIC_HEADER DESTINATION /usr/local/include/loki OPTIONAL)
 
-# pkg-config
 configure_file(loki-cpp.pc.in loki-cpp.pc @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/loki-cpp.pc DESTINATION /usr/lib/pkgconfig)
+install(FILES ${CMAKE_BINARY_DIR}/loki-cpp.pc
+  DESTINATION /usr/lib/pkgconfig)
