@@ -24,6 +24,7 @@ Agent::Agent(const std::map<std::string, std::string> &labels,
 	, print_level_{print_level}
 	, protocol_{protocol}
 	, colors_{colors}
+	, logs_{}
 {
 	switch (protocol_) {
 	case Protocol::Protobuf:
@@ -65,17 +66,18 @@ bool Agent::Done()
 	return !logs_.empty();
 }
 
-void Agent::Log(fmt::string_view format, fmt::format_args args, Level level)
-{
-	Log(fmt::vformat(format, args), level);
-}
-
 void Agent::Log(const std::string &line, Level level)
 {
 	mutex_.lock();
 
 	timespec now;
 	std::timespec_get(&now, TIME_UTC);
+
+	if (logs_.size() <= max_buffer_) {
+		mutex_.unlock();
+		Flush();
+		mutex_.lock();
+	}
 
 	if (log_level_ <= level) {
 		logs_.emplace(std::make_pair(now, line));
@@ -100,15 +102,10 @@ void Agent::Log(const std::string &line, Level level)
 
 		char buf[100];
 		std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&now.tv_sec));
-		fmt::print("\033[{}m{}.{} {} {}\033[0m\n", color(level), std::string(buf), now.tv_nsec, repr(level), line);
+		fmt::print("\033[{}m{}.{:09} {} {}\033[0m\n", color(level), std::string(buf), now.tv_nsec, repr(level), line);
 	}
 
-	if (logs_.size() <= max_buffer_) {
-		mutex_.unlock();
-		Flush();
-	} else {
-		mutex_.unlock();
-	}
+	mutex_.unlock();
 }
 
 void Agent::Flush()

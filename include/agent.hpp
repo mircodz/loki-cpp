@@ -52,30 +52,31 @@ public:
 
 	~Agent();
 
+	/// \brief Return true if log contains any elements.
 	bool Done();
 
 	template <typename... Args>
 	void Debugf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), Level::Debug);
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Debug);
 	}
 
 	template <typename... Args>
 	void Infof(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), Level::Info);
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Info);
 	}
 
 	template <typename... Args>
 	void Warnf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), Level::Warn);
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Warn);
 	}
 
 	template <typename... Args>
 	void Errorf(fmt::string_view format, const Args&... args)
 	{
-		Log(format, fmt::make_format_args(args...), Level::Error);
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Error);
 	}
 
 	void Flush();
@@ -97,7 +98,6 @@ private:
 
 	CURL *curl_;
 
-	void Log(fmt::string_view format, fmt::format_args args, Level level);
 	void Log(const std::string &line, Level level);
 	void FlushJson();
 	void FlushProto();

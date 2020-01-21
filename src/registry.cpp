@@ -30,8 +30,7 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::system_clock::now() - last_flush_).count() > flush_interval_ || close_request_.load()) {
 				for (auto &agent : agents_)
-					if (!agent->Done())
-						agent->Flush();
+					agent->Flush();
 				last_flush_ = std::chrono::system_clock::now();
 			}
 		}
@@ -41,6 +40,8 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 Registry::~Registry()
 {
 	close_request_.store(true);
+	for (auto &agent : agents_)
+		agent->Flush();
 	if (thread_.joinable()) {
 		thread_.join();
 	}
