@@ -66,6 +66,11 @@ bool Agent::Done()
 	return !logs_.empty();
 }
 
+void Agent::Log(fmt::string_view format, fmt::format_args args, Level level)
+{
+	Log(fmt::vformat(format, args), level);
+}
+
 void Agent::Log(const std::string &line, Level level)
 {
 	mutex_.lock();
@@ -140,7 +145,7 @@ void Agent::FlushJson()
 				line += "\"";
 				break;
 			default:
-				line += s;
+				line += c;
 				break;
 			}
 		}
