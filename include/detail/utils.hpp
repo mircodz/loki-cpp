@@ -24,9 +24,9 @@ struct Response
 	int code;
 };
 
-Response get(CURL *curl, const std::string &uri);
-Response post(CURL *curl, const std::string &uri, const std::string &payload, ContentType content_type = ContentType::Raw);
-Response request(CURL *curl, RequestMethod method, const std::string &uri, const std::string &payload, ContentType content_type);
+Response get(CURL *curl, const std::string &url);
+Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type = ContentType::Raw);
+Response request(CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type);
 
 size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data);
 

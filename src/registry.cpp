@@ -8,19 +8,19 @@
 namespace loki
 {
 
-Registry::Registry(const std::map<std::string, std::string> &labels,
-				   int flush_interval,
-				   int max_buffer,
-				   Level log_level,
-				   Level print_level,
-				   Protocol protocol,
-				   std::array<TermColor, 4> colors)
+template <typename T>
+Registry<T>::Registry(
+		const std::map<std::string, std::string> &labels,
+		int flush_interval,
+		int max_buffer,
+		Level log_level,
+		Level print_level,
+		std::array<Color, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
 	, print_level_{print_level}
-	, protocol_{protocol}
 	, colors_{colors}
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -37,7 +37,8 @@ Registry::Registry(const std::map<std::string, std::string> &labels,
 	});
 }
 
-Registry::~Registry()
+template <typename T>
+Registry<T>::~Registry()
 {
 	close_request_.store(true);
 	for (auto &agent : agents_)
@@ -48,29 +49,39 @@ Registry::~Registry()
 	curl_global_cleanup();
 }
 
-bool Registry::Ready() const
+template <typename T>
+bool Registry<T>::Ready() const
 {
 	CURL *curl = curl_easy_init();
-	return detail::http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
+	auto r = detail::http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
 	curl_easy_cleanup(curl);
+	return r;
 }
 
-std::string Registry::Metrics() const
+template <typename T>
+std::vector<Metric> Registry<T>::Metrics() const
 {
 	CURL *curl = curl_easy_init();
-	return detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
+	auto r = detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
 	curl_easy_cleanup(curl);
+	return Parser{r}.metrics();
 }
 
-Agent &Registry::Add(std::map<std::string, std::string> labels)
+template <typename T>
+T &Registry<T>::Add(std::map<std::string, std::string> &&labels)
 {
 	std::lock_guard<std::mutex> lock{mutex_};
-	for (const auto &p : labels_)
+	for (auto &p : labels_)
 		labels.emplace(p);
-	auto agent = std::make_unique<Agent>(labels, flush_interval_, max_buffer_, log_level_, print_level_, protocol_, colors_);
+	auto agent = std::make_unique<T>(labels, flush_interval_, max_buffer_, log_level_, print_level_, colors_);
 	auto &ref = *agent;
 	agents_.push_back(std::move(agent));
 	return ref;
 }
+
+template class Registry<AgentJson>;
+#if defined(HAS_PROTOBUF)
+template class Registry<AgentProto>;
+#endif
 
 } // namespace loki

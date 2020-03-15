@@ -3,63 +3,66 @@
 namespace loki
 {
 
-Builder::Builder()
+template <typename T>
+Builder<T>::Builder()
 	: labels_{}
 	, flush_interval_{5000}
 	, max_buffer_{10000}
 	, log_level_{Level::Info}
 	, print_level_{Level::Disable}
-	, protocol_{Protocol::Protobuf}
-	, colors_{{ TermColor::White,
-				TermColor::White,
-				TermColor::White,
-				TermColor::White  }} {}
+	, colors_{{Color::White, Color::White, Color::White, Color::White}} {}
 
-Builder& Builder::Labels(const std::map<std::string, std::string> &labels)
+template <typename T>
+Builder<T>& Builder<T>::Labels(const std::map<std::string, std::string> &labels)
 {
 	labels_ = labels;
 	return *this;
 }
 
-Builder& Builder::FlushInterval(int flush_interval)
+template <typename T>
+Builder<T>& Builder<T>::FlushInterval(int flush_interval)
 {
 	flush_interval_ = flush_interval;
 	return *this;
 }
 
-Builder& Builder::MaxBuffer(int max_buffer)
+template <typename T>
+Builder<T>& Builder<T>::MaxBuffer(int max_buffer)
 {
 	max_buffer_ = max_buffer;
 	return *this;
 }
 
-Builder& Builder::LogLevel(Level log_level)
+template <typename T>
+Builder<T>& Builder<T>::LogLevel(Level log_level)
 {
 	log_level_ = log_level;
 	return *this;
 }
 
-Builder& Builder::PrintLevel(Level print_level)
+template <typename T>
+Builder<T>& Builder<T>::PrintLevel(Level print_level)
 {
 	print_level_ = print_level;
 	return *this;
 }
 
-Builder& Builder::FlushProtocol(Protocol protocol)
-{
-	protocol_ = protocol;
-	return *this;
-}
-
-Builder& Builder::Colorize(Level level, TermColor color)
+template <typename T>
+Builder<T>& Builder<T>::Colorize(Level level, Color color)
 {
 	colors_[static_cast<int>(level)] = color;
 	return *this;
 }
 
-Registry Builder::Build()
+template <typename T>
+Registry<T> Builder<T>::Build()
 {
-	return Registry{labels_, flush_interval_, max_buffer_, log_level_, print_level_, protocol_, colors_};
+	return {labels_, flush_interval_, max_buffer_, log_level_, print_level_, colors_};
 }
+
+template class Builder<AgentJson>;
+#if defined(HAS_PROTOBUF)
+template class Builder<AgentProto>;
+#endif
 
 } // namespace loki

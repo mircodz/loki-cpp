@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "agent.hpp"
+#include "parser.hpp"
 
 namespace loki
 {
@@ -12,25 +13,26 @@ namespace loki
 /// \brief Handles the creation and flushing of agents.
 ///
 /// The class is thread-safe.
+template <typename T>
 class Registry
 {
 
 public:
-	Registry(const std::map<std::string, std::string> &labels,
-		  int flush_interval,
-		  int max_buffer,
-		  Level log_level,
-		  Level print_level,
-		  Protocol protocol,
-		  std::array<TermColor, 4> colors);
+	Registry(
+		const std::map<std::string, std::string> &labels,
+		int flush_interval,
+		int max_buffer,
+		Level log_level,
+		Level print_level,
+		std::array<Color, 4> colors);
 	~Registry();
 
 	bool Ready() const;
 
 	/// \brief Retrieve Loki's Promethus metrics as a string.
-	std::string Metrics() const;
+	std::vector<Metric> Metrics() const;
 
-	Agent &Add(std::map<std::string, std::string> labels = {});
+	T &Add(std::map<std::string, std::string> &&labels);
 
 private:
 	std::map<std::string, std::string> labels_;
@@ -38,9 +40,8 @@ private:
 	int max_buffer_;
 	Level log_level_;
 	Level print_level_;
-	Protocol protocol_;
 
-	std::array<TermColor, 4> colors_;
+	std::array<Color, 4> colors_;
 
 	std::vector<std::unique_ptr<Agent>> agents_;
 	std::mutex mutex_;

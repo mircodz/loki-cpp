@@ -18,21 +18,21 @@ std::string to_string(const timespec &t)
 namespace http
 {
 
-Response get(CURL *curl, const std::string &uri)
+Response get(CURL *curl, const std::string &url)
 {
-	return request(curl, RequestMethod::Get, uri, std::string{}, ContentType::Raw);
+	return request(curl, RequestMethod::Get, url, std::string{}, ContentType::Raw);
 }
 
-Response post(CURL *curl, const std::string &uri, const std::string &payload, ContentType content_type)
+Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type)
 {
-	return request(curl, RequestMethod::Post, uri, payload, content_type);
+	return request(curl, RequestMethod::Post, url, payload, content_type);
 }
 
-Response request(CURL *curl, RequestMethod method, const std::string &uri, const std::string &payload, ContentType content_type)
+Response request(CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type)
 {
 	Response r;
 
-	curl_easy_setopt(curl, CURLOPT_URL, uri.data());
+	curl_easy_setopt(curl, CURLOPT_URL, url.data());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &r.body);
 

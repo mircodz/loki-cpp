@@ -1,56 +1,34 @@
 #include "agent.hpp"
 
+#include <cstdio>
+#include <ctime>
+
+#if defined(HAS_PROTOBUF)
 #include <snappy.h>
+#endif
 
 #include "detail/utils.hpp"
 #include "logproto.pb.h"
-#include <ctime>
-#include <cstdio>
 
 namespace loki
 {
 
-Agent::Agent(const std::map<std::string, std::string> &labels,
-			 int flush_interval,
-			 int max_buffer,
-			 Level log_level,
-			 Level print_level,
-			 Protocol protocol,
-			 std::array<TermColor, 4> colors)
+Agent::Agent(
+		const std::map<std::string, std::string> &labels,
+		int flush_interval,
+		int max_buffer,
+		Level log_level,
+		Level print_level,
+		std::array<Color, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
 	, print_level_{print_level}
-	, protocol_{protocol}
 	, colors_{colors}
 	, logs_{}
+	, mutex_{}
 {
-	switch (protocol_) {
-	case Protocol::Protobuf:
-		compiled_labels_ = "{";
-		for (const auto &label : labels_) {
-			compiled_labels_ += label.first;
-			compiled_labels_ += "=\"";
-			compiled_labels_ += label.second;
-			compiled_labels_ += "\",";
-		}
-		compiled_labels_.pop_back();
-		compiled_labels_ += "}";
-		break;
-	case Protocol::Json:
-		compiled_labels_ = "{";
-		for (const auto &label : labels_) {
-			compiled_labels_ += "\"";
-			compiled_labels_ += label.first;
-			compiled_labels_ += "\":\"";
-			compiled_labels_ += label.second;
-			compiled_labels_ += "\",";
-		}
-		compiled_labels_.pop_back();
-		compiled_labels_ += "}";
-		break;
-	}
 	curl_ = curl_easy_init();
 }
 
@@ -60,128 +38,171 @@ Agent::~Agent()
 	curl_ = nullptr;
 }
 
+void Agent::Flush() {}
+
 bool Agent::Done()
 {
 	std::lock_guard<std::mutex> lock{mutex_};
 	return !logs_.empty();
 }
 
-void Agent::Log(fmt::string_view format, fmt::format_args args, Level level)
+std::string Agent::Format(fmt::string_view &&format, fmt::format_args &&args) const
 {
-	Log(fmt::vformat(format, args), level);
+	return std::move(fmt::vformat(format, args));
 }
 
-void Agent::Log(const std::string &line, Level level)
+void Agent::Log(std::string &&line, Level level)
 {
-	mutex_.lock();
-
-	timespec now;
-	std::timespec_get(&now, TIME_UTC);
+	std::lock_guard<std::mutex> lock{mutex_};
 
 	if (logs_.size() <= max_buffer_) {
 		mutex_.unlock();
 		Flush();
-		mutex_.lock();
+	}
+
+	timespec ts;
+	timespec_get(&ts, TIME_UTC);
+
+	if (print_level_ <= level) {
+		Print(line, level, ts);
 	}
 
 	if (log_level_ <= level) {
-		logs_.emplace(std::make_pair(now, line));
+		logs_.emplace(std::make_pair(std::move(line), std::move(ts)));
 	}
-
-	// moving this into a separate function?
-	// adding the possibilty to define a custom callback?
-	if (print_level_ <= level) {
-		auto repr = [](Level level) -> std::string {
-			switch (level) {
-			case Level::Debug:   return "[DEBUG]";
-			case Level::Info:    return "[ INFO]";
-			case Level::Warn:    return "[ WARN]";
-			case Level::Error:   return "[ERROR]";
-			case Level::Disable: return "";
-			}
-		};
-
-		auto color = [this](Level level) -> int {
-			return static_cast<int>(colors_[static_cast<int>(level)]);
-		};
-
-		char buf[100];
-		std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&now.tv_sec));
-		fmt::print("\033[{}m{}.{:09} {} {}\033[0m\n", color(level), std::string(buf), now.tv_nsec, repr(level), line);
-	}
-
-	mutex_.unlock();
 }
 
-void Agent::Flush()
+void Agent::Print(const std::string &line, Level level, timespec ts) const
 {
-	switch (protocol_) {
-	case Protocol::Protobuf:
-		FlushProto();
-		break;
-	case Protocol::Json:
-		FlushJson();
-		break;
-	}
+	const auto repr = [](Level level) -> std::string {
+		switch (level) {
+		case Level::Debug:   return "[DEBUG]";
+		case Level::Info:    return "[ INFO]";
+		case Level::Warn:    return "[ WARN]";
+		case Level::Error:   return "[ERROR]";
+		case Level::Disable: return "";
+		}
+	};
+
+	char buf[128];
+	std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&ts.tv_sec));
+	fmt::print(
+		"\033[{}m{}.{:09} {} {}\033[0m\n",
+		static_cast<int>(colors_[static_cast<int>(level)]),
+		std::string(buf),
+		ts.tv_nsec,
+		repr(level),
+		line);
 }
 
-void Agent::FlushJson()
+std::string Agent::Escape(const std::string &str) const
+{
+	std::string s = "";
+	for (const auto &c : str) {
+		switch (c) {
+		case '\\':
+			s += "\\\\";
+			break;
+		case '\"':
+			s += "\\\"";
+			break;
+		default:
+			s += c;
+			break;
+		}
+	}
+	return s;
+}
+
+AgentJson::AgentJson(
+			const std::map<std::string, std::string> &labels,
+			int flush_interval,
+			int max_buffer,
+			Level log_level,
+			Level print_level,
+			std::array<Color, 4> colors)
+	: Agent{labels, flush_interval, max_buffer, log_level, print_level, colors }
+{
+	compiled_labels_ = "{";
+	for (auto label : labels_) {
+		compiled_labels_ += "\"";
+		compiled_labels_ += Escape(label.first);
+		compiled_labels_ += "\":\"";
+		compiled_labels_ += Escape(label.second);
+		compiled_labels_ += "\",";
+	}
+	compiled_labels_.pop_back();
+	compiled_labels_ += "}";
+}
+
+void AgentJson::Flush()
 {
 	std::lock_guard<std::mutex> lock{mutex_};
 
-	int count = 0;
+	if (logs_.size() == 0) return;
+
+	std::string payload = "";
 	std::string line = "[";
+
 	while (!logs_.empty()) {
-		const auto &[t, s] = logs_.front();
-		line += R"([")";
+		auto &[s, t] = logs_.front();
+
+		line.reserve(s.size());
+		line += "[\"";
 		line += detail::to_string(t);
-		line += R"(",")";
-		for (const auto &c : s) {
-			switch (c) {
-			case '\\':
-				line += "\\";
-				break;
-			case '"':
-				line += "\"";
-				break;
-			default:
-				line += c;
-				break;
-			}
-		}
-		line += R"("],)";
+		line += "\",\"";
+		line += Escape(s);
+		line += "\"],";
+
 		logs_.pop();
-		count++;
 	}
+
 	line.pop_back();
 	line += "]";
 
-	if (count) {
-		std::string payload;
-		payload += R"({"streams":[{"stream":)";
-		payload += compiled_labels_;
-		payload += R"(,"values":)";
-		payload += line;
-		payload += R"(}]})";
-		detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
-	}
+	payload += "{\"streams\":[{\"stream\":";
+	payload += compiled_labels_;
+	payload += ",\"values\":";
+	payload += line;
+	payload += "}]}";
+
+	detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
 
-void Agent::FlushProto()
+#if defined(HAS_PROTOBUF)
+AgentProto::AgentProto(
+			const std::map<std::string, std::string> &labels,
+			int flush_interval,
+			int max_buffer,
+			Level log_level,
+			Level print_level,
+			std::array<Color, 4> colors)
+	: Agent{labels, flush_interval, max_buffer, log_level, print_level, colors }
 {
-	using namespace logproto;
+	compiled_labels_ = "{";
+	for (const auto &label : labels_) {
+		compiled_labels_ += Escape(label.first);
+		compiled_labels_ += "=\"";
+		compiled_labels_ += Escape(label.second);
+		compiled_labels_ += "\",";
+	}
+	compiled_labels_.pop_back();
+	compiled_labels_ += "}";
+}
 
+void AgentProto::Flush()
+{
 	std::lock_guard<std::mutex> lock{mutex_};
 
 	std::string payload;
 	std::string compressed;
-	PushRequest push_request;
+	logproto::PushRequest push_request;
 
 	auto *stream = push_request.add_streams();
 	stream->set_labels(compiled_labels_);
 
 	while (!logs_.empty()) {
-		const auto &[t, s] = logs_.front();
+		auto &[s, t] = logs_.front();
 
 		auto *timestamp = new google::protobuf::Timestamp{};
 		timestamp->set_seconds(t.tv_sec);
@@ -198,5 +219,6 @@ void Agent::FlushProto()
 	snappy::Compress(payload.data(), payload.size(), &compressed);
 	detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
 }
+#endif
 
 } // namespace loki

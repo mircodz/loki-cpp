@@ -6,20 +6,20 @@
 namespace loki
 {
 
+template <typename T>
 class Builder
 {
 
 public:
 	Builder();
-	Builder& Labels(const std::map<std::string, std::string> &labels);
-	Builder& FlushInterval(int flush_interval);
-	Builder& MaxBuffer(int max_buffer);
-	Builder& LogLevel(Level log_level);
-	Builder& PrintLevel(Level print_level);
-	Builder& FlushProtocol(Protocol protocol);
-	Builder& Colorize(Level level, TermColor color);
+	Builder<T>& Labels(const std::map<std::string, std::string> &labels);
+	Builder<T>& FlushInterval(int flush_interval);
+	Builder<T>& MaxBuffer(int max_buffer);
+	Builder<T>& LogLevel(Level log_level);
+	Builder<T>& PrintLevel(Level print_level);
+	Builder<T>& Colorize(Level level, Color color);
 
-	Registry Build();
+	Registry<T> Build();
 
 private:
 	std::map<std::string, std::string> labels_;
@@ -27,10 +27,8 @@ private:
 	int max_buffer_;
 	Level log_level_;
 	Level print_level_;
-	Protocol protocol_;
 
-	std::array<TermColor, 4> colors_;
-
+	std::array<Color, 4> colors_;
 };
 
 } // namespace loki

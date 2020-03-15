@@ -4,10 +4,9 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v1
     - name: Docker Build
-      run : make ci
+      run : docker build -t loki-cpp:ci .
