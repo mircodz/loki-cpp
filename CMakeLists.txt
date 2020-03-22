@@ -22,7 +22,6 @@ file(GLOB SOURCES
 	${PROJECT_SOURCE_DIR}/src/builder.cpp
 	${PROJECT_SOURCE_DIR}/src/registry.cpp
 	${PROJECT_SOURCE_DIR}/src/agent.cpp
-	${PROJECT_SOURCE_DIR}/src/parser.cpp
 	${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
 	${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
 	${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc

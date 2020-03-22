@@ -64,7 +64,9 @@ std::vector<Metric> Registry<T>::Metrics() const
 	CURL *curl = curl_easy_init();
 	auto r = detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
 	curl_easy_cleanup(curl);
-	return Parser{r}.metrics();
+	Lexer lexer{r};
+	Parser parser{lexer.tokens()};
+	return parser.metrics();
 }
 
 template <typename T>
