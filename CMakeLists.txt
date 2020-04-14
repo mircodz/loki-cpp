@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4)
-project(loki-cpp VERSION 0.2.0)
+project(loki-cpp VERSION 0.2.1)
 
 include(GNUInstallDirs)
 
@@ -19,7 +19,6 @@ if(BUILD_TESTS)
 endif()
 
 file(GLOB SOURCES
-	${PROJECT_SOURCE_DIR}/src/builder.cpp
 	${PROJECT_SOURCE_DIR}/src/registry.cpp
 	${PROJECT_SOURCE_DIR}/src/agent.cpp
 	${PROJECT_SOURCE_DIR}/src/detail/utils.cpp

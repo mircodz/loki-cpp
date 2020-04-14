@@ -3,16 +3,14 @@
 
 #include "detail/utils.hpp"
 
-#include <iostream>
-
 namespace loki
 {
 
-template <typename T>
-Registry<T>::Registry(
-		const std::map<std::string, std::string> &labels,
-		int flush_interval,
-		int max_buffer,
+template <typename AgentType>
+Registry<AgentType>::Registry(
+		std::map<std::string, std::string> &&labels,
+		std::size_t flush_interval,
+		std::size_t max_buffer,
 		Level log_level,
 		Level print_level,
 		std::array<Color, 4> colors)
@@ -26,31 +24,30 @@ Registry<T>::Registry(
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	thread_ = std::thread([this]() {
 		while (!close_request_.load()) {
-			// wait some time between flushes, force when receiving a close request
-			if (std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now() - last_flush_).count() > flush_interval_ || close_request_.load()) {
-				for (auto &agent : agents_)
-					agent->Flush();
-				last_flush_ = std::chrono::system_clock::now();
+			for (auto &agent : agents_) {
+				agent->Flush();
 			}
+			std::chrono::milliseconds timespan(flush_interval_);
+			std::this_thread::sleep_for(timespan);
 		}
 	});
 }
 
-template <typename T>
-Registry<T>::~Registry()
+template <typename AgentType>
+Registry<AgentType>::~Registry()
 {
 	close_request_.store(true);
-	for (auto &agent : agents_)
+	for (auto &agent : agents_) {
 		agent->Flush();
+	}
 	if (thread_.joinable()) {
 		thread_.join();
 	}
 	curl_global_cleanup();
 }
 
-template <typename T>
-bool Registry<T>::Ready() const
+template <typename AgentType>
+bool Registry<AgentType>::Ready() const
 {
 	CURL *curl = curl_easy_init();
 	auto r = detail::http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
@@ -58,8 +55,8 @@ bool Registry<T>::Ready() const
 	return r;
 }
 
-template <typename T>
-std::vector<Metric> Registry<T>::Metrics() const
+template <typename AgentType>
+std::vector<Metric> Registry<AgentType>::Metrics() const
 {
 	CURL *curl = curl_easy_init();
 	auto r = detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
@@ -69,13 +66,14 @@ std::vector<Metric> Registry<T>::Metrics() const
 	return parser.metrics();
 }
 
-template <typename T>
-T &Registry<T>::Add(std::map<std::string, std::string> &&labels)
+template <typename AgentType>
+AgentType &Registry<AgentType>::Add(std::map<std::string, std::string> &&labels)
 {
 	std::lock_guard<std::mutex> lock{mutex_};
-	for (auto &p : labels_)
-		labels.emplace(p);
-	auto agent = std::make_unique<T>(labels, flush_interval_, max_buffer_, log_level_, print_level_, colors_);
+	for (auto &p : labels_) {
+		labels.insert(p);
+	}
+	auto agent = std::make_unique<AgentType>(std::move(labels), flush_interval_, max_buffer_, log_level_, print_level_, colors_);
 	auto &ref = *agent;
 	agents_.push_back(std::move(agent));
 	return ref;

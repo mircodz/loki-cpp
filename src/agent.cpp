@@ -13,44 +13,6 @@
 namespace loki
 {
 
-Agent::Agent(
-		const std::map<std::string, std::string> &labels,
-		int flush_interval,
-		int max_buffer,
-		Level log_level,
-		Level print_level,
-		std::array<Color, 4> colors)
-	: labels_{labels}
-	, flush_interval_{flush_interval}
-	, max_buffer_{max_buffer}
-	, log_level_{log_level}
-	, print_level_{print_level}
-	, colors_{colors}
-	, logs_{}
-	, mutex_{}
-{
-	curl_ = curl_easy_init();
-}
-
-Agent::~Agent()
-{
-	curl_easy_cleanup(curl_);
-	curl_ = nullptr;
-}
-
-void Agent::Flush() {}
-
-bool Agent::Done()
-{
-	std::lock_guard<std::mutex> lock{mutex_};
-	return !logs_.empty();
-}
-
-std::string Agent::Format(fmt::string_view &&format, fmt::format_args &&args) const
-{
-	return std::move(fmt::vformat(format, args));
-}
-
 void Agent::Log(std::string &&line, Level level)
 {
 	std::lock_guard<std::mutex> lock{mutex_};
@@ -76,59 +38,47 @@ void Agent::Print(const std::string &line, Level level, timespec ts) const
 {
 	const auto repr = [](Level level) -> std::string {
 		switch (level) {
-		case Level::Debug:   return "[DEBUG]";
-		case Level::Info:    return "[ INFO]";
-		case Level::Warn:    return "[ WARN]";
-		case Level::Error:   return "[ERROR]";
-		case Level::Disable: return "";
+			case Level::Debug:   return "[DEBUG]";
+			case Level::Info:    return "[ INFO]";
+			case Level::Warn:    return "[ WARN]";
+			case Level::Error:   return "[ERROR]";
+			case Level::Disable: return "";
 		}
+		return "";
 	};
 
 	char buf[128];
 	std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&ts.tv_sec));
-	fmt::print(
-		"\033[{}m{}.{:09} {} {}\033[0m\n",
+	fmt::print("\033[{}m{}.{:09} {} {}\033[0m\n",
 		static_cast<int>(colors_[static_cast<int>(level)]),
-		std::string(buf),
-		ts.tv_nsec,
-		repr(level),
-		line);
+		std::string(buf),	ts.tv_nsec, repr(level), line);
 }
 
-std::string Agent::Escape(const std::string &str) const
+void Agent::Escape(std::string &line, const std::string &str)
 {
-	std::string s = "";
 	for (const auto &c : str) {
 		switch (c) {
 		case '\\':
-			s += "\\\\";
+			line += "\\\\";
 			break;
 		case '\"':
-			s += "\\\"";
+			line += "\\\"";
 			break;
 		default:
-			s += c;
+			line += c;
 			break;
 		}
 	}
-	return s;
 }
 
-AgentJson::AgentJson(
-			const std::map<std::string, std::string> &labels,
-			int flush_interval,
-			int max_buffer,
-			Level log_level,
-			Level print_level,
-			std::array<Color, 4> colors)
-	: Agent{labels, flush_interval, max_buffer, log_level, print_level, colors }
+void AgentJson::BuildLabels()
 {
 	compiled_labels_ = "{";
 	for (auto label : labels_) {
 		compiled_labels_ += "\"";
-		compiled_labels_ += Escape(label.first);
+		Escape(compiled_labels_, label.first);
 		compiled_labels_ += "\":\"";
-		compiled_labels_ += Escape(label.second);
+		Escape(compiled_labels_, label.second);
 		compiled_labels_ += "\",";
 	}
 	compiled_labels_.pop_back();
@@ -151,7 +101,7 @@ void AgentJson::Flush()
 		line += "[\"";
 		line += detail::to_string(t);
 		line += "\",\"";
-		line += Escape(s);
+		Escape(line, s);
 		line += "\"],";
 
 		logs_.pop();
@@ -170,20 +120,13 @@ void AgentJson::Flush()
 }
 
 #if defined(HAS_PROTOBUF)
-AgentProto::AgentProto(
-			const std::map<std::string, std::string> &labels,
-			int flush_interval,
-			int max_buffer,
-			Level log_level,
-			Level print_level,
-			std::array<Color, 4> colors)
-	: Agent{labels, flush_interval, max_buffer, log_level, print_level, colors }
+void AgentProto::BuildLabels()
 {
 	compiled_labels_ = "{";
 	for (const auto &label : labels_) {
-		compiled_labels_ += Escape(label.first);
+		Escape(compiled_labels_, label.first);
 		compiled_labels_ += "=\"";
-		compiled_labels_ += Escape(label.second);
+		Escape(compiled_labels_, label.second);
 		compiled_labels_ += "\",";
 	}
 	compiled_labels_.pop_back();

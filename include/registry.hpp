@@ -13,37 +13,37 @@ namespace loki
 /// \brief Handles the creation and flushing of agents.
 ///
 /// The class is thread-safe.
-template <typename T>
+template <typename AgentType>
 class Registry
 {
 
 public:
 	Registry(
-		const std::map<std::string, std::string> &labels,
-		int flush_interval,
-		int max_buffer,
+		std::map<std::string, std::string> &&labels,
+		std::size_t flush_interval,
+		std::size_t max_buffer,
 		Level log_level,
 		Level print_level,
 		std::array<Color, 4> colors);
 	~Registry();
 
-	bool Ready() const;
+	[[nodiscard]] bool Ready() const;
 
-	/// \brief Retrieve Loki's Promethus metrics as a string.
-	std::vector<Metric> Metrics() const;
+	/// \brief Retrieve Loki's Promethus metrics.
+	[[nodiscard]] std::vector<Metric> Metrics() const;
 
-	T &Add(std::map<std::string, std::string> &&labels);
+	[[nodiscard]] AgentType &Add(std::map<std::string, std::string> &&labels);
 
 private:
 	std::map<std::string, std::string> labels_;
-	int flush_interval_;
-	int max_buffer_;
+	std::size_t flush_interval_;
+	std::size_t max_buffer_;
 	Level log_level_;
 	Level print_level_;
 
 	std::array<Color, 4> colors_;
 
-	std::vector<std::unique_ptr<Agent>> agents_;
+	std::vector<std::unique_ptr<AgentType>> agents_;
 	std::mutex mutex_;
 
 	/// \brief Handles the flushing of the registered agents.
@@ -52,7 +52,6 @@ private:
 	/// Blocks registry destruction until all agents are done.
 	std::thread thread_;
 
-	std::chrono::system_clock::time_point last_flush_;
 	std::atomic<bool> close_request_;
 
 };

@@ -11,25 +11,63 @@ class Builder
 {
 
 public:
-	Builder();
-	Builder<T>& Labels(const std::map<std::string, std::string> &labels);
-	Builder<T>& FlushInterval(int flush_interval);
-	Builder<T>& MaxBuffer(int max_buffer);
-	Builder<T>& LogLevel(Level log_level);
-	Builder<T>& PrintLevel(Level print_level);
-	Builder<T>& Colorize(Level level, Color color);
 
-	Registry<T> Build();
+	Builder<T>& Labels(const std::map<std::string, std::string> &labels)
+	{
+		labels_ = labels;
+		return *this;
+	}
+
+	Builder<T>& FlushInterval(std::size_t flush_interval)
+	{
+		flush_interval_ = flush_interval;
+		return *this;
+	}
+
+	Builder<T>& MaxBuffer(std::size_t max_buffer)
+	{
+		max_buffer_ = max_buffer;
+		return *this;
+	}
+
+	Builder<T>& LogLevel(Level log_level)
+	{
+		log_level_ = log_level;
+		return *this;
+	}
+
+	Builder<T>& PrintLevel(Level print_level)
+	{
+		print_level_ = print_level;
+		return *this;
+	}
+
+	Builder<T>& Colorize(Level level, Color color)
+	{
+		colors_[static_cast<int>(level)] = color;
+		return *this;
+	}
+
+	Registry<T> Build()
+	{
+		return {std::move(labels_), flush_interval_, max_buffer_, log_level_, print_level_, colors_};
+	}
 
 private:
-	std::map<std::string, std::string> labels_;
-	int flush_interval_;
-	int max_buffer_;
-	Level log_level_;
-	Level print_level_;
+	std::map<std::string, std::string> labels_{};
+	std::size_t flush_interval_{5000};
+	std::size_t max_buffer_{10000};
+	Level log_level_{Level::Info};
+	Level print_level_{Level::Disable};
 
-	std::array<Color, 4> colors_;
+	std::array<Color, 4> colors_{{Color::White, Color::White, Color::White, Color::White}};
 };
+
+template class Builder<AgentJson>;
+#if defined(HAS_PROTOBUF)
+template class Builder<AgentProto>;
+#endif
+
 
 } // namespace loki
 

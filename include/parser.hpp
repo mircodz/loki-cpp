@@ -20,7 +20,7 @@ class Token
 {
 public:
 	enum class Kind
-		{ AttributeType		
+		{ AttributeType
 		, AttributeKey
 		, AttributeValue
 		, MetricKey
