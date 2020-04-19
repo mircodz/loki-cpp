@@ -68,7 +68,7 @@ protected:
 	/// TODO: implement a user-defined print callaback
 	void Print(const std::string &line, Level level, timespec ts) const;
 
-	void BuildLabels() {}
+	void BuildLabels();
 
 public:
 	Agent(
@@ -87,7 +87,6 @@ public:
 	, logs_{}
 	, mutex_{}
 	{
-		BuildLabels();
 		curl_ = curl_easy_init();
 	}
 
@@ -145,7 +144,16 @@ class AgentJson final : public Agent
 protected:
 	void BuildLabels();
 public:
-	using Agent::Agent;
+	AgentJson(
+			std::map<std::string, std::string> &&labels,
+			std::size_t flush_interval,
+			std::size_t max_buffer,
+			Level log_level,
+			Level print_level,
+			std::array<Color, 4> colors)
+	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, colors} {
+		BuildLabels();
+	}
 	void Flush();
 };
 
@@ -156,7 +164,16 @@ class AgentProto final : public Agent
 protected:
 	void BuildLabels();
 public:
-	using Agent::Agent;
+	AgentProto(
+			std::map<std::string, std::string> &&labels,
+			std::size_t flush_interval,
+			std::size_t max_buffer,
+			Level log_level,
+			Level print_level,
+			std::array<Color, 4> colors)
+	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, colors} {
+		BuildLabels();
+	}
 	void Flush();
 };
 #endif
