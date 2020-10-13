@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4)
-project(loki-cpp VERSION 0.2.1)
+project(loki-cpp VERSION 0.3.0)
 
 include(GNUInstallDirs)
 
@@ -11,8 +11,14 @@ option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
 option(BUILD_TESTS       "Build unit testing"        OFF)
 
 # Compiler Settings
-set(CMAKE_CXX_STANDARD   17)
-set(CMAKE_CXX_EXTENSIONS Off)
+set(CMAKE_CXX_COMPILER             "/usr/bin/g++")
+set(CMAKE_CXX_STANDARD             17)
+set(CMAKE_CXX_STANDARD_REQUIRED    On)
+set(CMAKE_CXX_EXTENSIONS           Off)
+set(CMAKE_CXX_FLAGS_DEBUG          "-g")
+set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os")
+set(CMAKE_CXX_FLAGS_RELEASE        "-O4")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 
 # Testing
 if(BUILD_TESTS)
@@ -37,21 +43,20 @@ add_library(loki-cpp ${SOURCES})
 target_include_directories(loki-cpp PRIVATE ${HEADERS})
 target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
 
-set_target_properties(loki-cpp PROPERTIES
-	VERSION ${PROJECT_VERSION}
-	SOVERSION 1
-	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp")
 
 find_package(Protobuf REQUIRED)
 if(PROTOBUF_FOUND)
 	target_link_libraries(loki-cpp snappy)
 	target_link_libraries(loki-cpp ${PROTOBUF_LIBRARIES})
 	include_directories(${PROTOBUF_INCLUDE_DIRS})
+
+	# Compile .proto files
 	function(compile_proto _file)
 		execute_process(
-			COMMAND protoc --cpp_out=${PROJECT_SOURCE_DIR}/gen
-										--proto_path=${PROJECT_SOURCE_DIR}/proto
-										${_file}
+			COMMAND protoc 
+				--cpp_out=${PROJECT_SOURCE_DIR}/gen
+				--proto_path=${PROJECT_SOURCE_DIR}/proto
+				${_file}
 			RESULT_VARIABLE result)
 		if(${result})
 			message(FATAL_ERROR "Error compiling protobuf schemas.")
@@ -81,6 +86,12 @@ endif()
 
 target_link_libraries(loki-cpp fmt)
 target_link_libraries(loki-cpp pthread)
+
+# Installation settings
+set_target_properties(loki-cpp PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION 1
+	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp")
 
 install(TARGETS loki-cpp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
