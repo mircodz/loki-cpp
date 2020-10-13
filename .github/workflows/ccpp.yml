@@ -8,5 +8,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Docker Build
-      run : docker build -t loki-cpp:ci .
+
+    - name: Download Dependencies
+      run : |
+        sudo apt-get-install libgtest-dev libcurl4-openssl-dev
+
+    - name: Configure Cmake
+      run: |
+        cmake . -DBUILD_TESTS=ON
+
+    - name: Run Tests
+      run: |
+        ctest -V
