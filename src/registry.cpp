@@ -3,9 +3,8 @@
 
 #include "detail/utils.hpp"
 
-namespace loki
-{
-
+namespace loki {
+ 
 template <typename AgentType>
 Registry<AgentType>::Registry(
 		std::map<std::string, std::string> &&labels,
@@ -13,14 +12,15 @@ Registry<AgentType>::Registry(
 		std::size_t max_buffer,
 		Level log_level,
 		Level print_level,
+		const std::string &remote_host,
 		std::array<Color, 4> colors)
 	: labels_{labels}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
 	, print_level_{print_level}
-	, colors_{colors}
-{
+	, remote_host_{remote_host}
+	, colors_{colors} {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	thread_ = std::thread([this]() {
 		while (!close_request_.load()) {
@@ -34,9 +34,8 @@ Registry<AgentType>::Registry(
 }
 
 template <typename AgentType>
-Registry<AgentType>::~Registry()
-{
-	close_request_.store(true);
+Registry<AgentType>::~Registry() {
+ 	close_request_.store(true);
 	for (auto &agent : agents_) {
 		agent->Flush();
 	}
@@ -47,19 +46,17 @@ Registry<AgentType>::~Registry()
 }
 
 template <typename AgentType>
-bool Registry<AgentType>::Ready() const
-{
+bool Registry<AgentType>::Ready() const {
 	CURL *curl = curl_easy_init();
-	auto r = detail::http::get(curl, "http://127.0.0.1:3100/ready").code == 200;
+	auto r = detail::get(curl, fmt::format("http://{}/ready", remote_host_)).code == 200;
 	curl_easy_cleanup(curl);
 	return r;
 }
 
 template <typename AgentType>
-std::vector<Metric> Registry<AgentType>::Metrics() const
-{
+std::vector<Metric> Registry<AgentType>::Metrics() const {
 	CURL *curl = curl_easy_init();
-	auto r = detail::http::get(curl, "http://127.0.0.1:3100/metrics").body;
+	auto r = detail::get(curl, fmt::format("http://{}/metrics", remote_host_)).body;
 	curl_easy_cleanup(curl);
 	Lexer lexer{r};
 	Parser parser{lexer.tokens()};
@@ -67,13 +64,10 @@ std::vector<Metric> Registry<AgentType>::Metrics() const
 }
 
 template <typename AgentType>
-AgentType &Registry<AgentType>::Add(std::map<std::string, std::string> &&labels)
-{
+AgentType &Registry<AgentType>::Add(std::map<std::string, std::string> &&labels) {
 	std::lock_guard<std::mutex> lock{mutex_};
-	for (auto &p : labels_) {
-		labels.insert(p);
-	}
-	auto agent = std::make_unique<AgentType>(std::move(labels), flush_interval_, max_buffer_, log_level_, print_level_, colors_);
+	labels.merge(labels_);
+	auto agent = std::make_unique<AgentType>(std::move(labels), flush_interval_, max_buffer_, log_level_, print_level_, remote_host_, colors_);
 	auto &ref = *agent;
 	agents_.push_back(std::move(agent));
 	return ref;

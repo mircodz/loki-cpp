@@ -10,20 +10,17 @@
 #include "detail/utils.hpp"
 #include "logproto.pb.h"
 
-namespace loki
-{
+namespace loki {
 
-void Agent::Log(std::string &&line, Level level)
-{
-	std::lock_guard<std::mutex> lock{mutex_};
+void Agent::Log(std::string &&line, Level level) {
+	std::lock_guard<std::recursive_mutex> lock{mutex_};
 
 	if (logs_.size() <= max_buffer_) {
-		mutex_.unlock();
 		Flush();
 	}
 
-	timespec ts;
-	timespec_get(&ts, TIME_UTC);
+	std::timespec ts;
+	std::timespec_get(&ts, TIME_UTC);
 
 	if (print_level_ <= level) {
 		Print(line, level, ts);
@@ -34,9 +31,8 @@ void Agent::Log(std::string &&line, Level level)
 	}
 }
 
-void Agent::Print(const std::string &line, Level level, timespec ts) const
-{
-	const auto repr = [](Level level) -> std::string {
+void Agent::Print(const std::string &line, Level level, timespec ts) const {
+	const auto get_label = [](Level level) -> std::string_view {
 		switch (level) {
 			case Level::Debug:   return "[DEBUG]";
 			case Level::Info:    return "[ INFO]";
@@ -49,14 +45,12 @@ void Agent::Print(const std::string &line, Level level, timespec ts) const
 
 	char buf[128];
 	std::strftime(buf, sizeof buf, "%F %T", std::gmtime(&ts.tv_sec));
-	fmt::print("\033[{}m{}.{:09} {} {}\033[0m\n",
-		static_cast<int>(colors_[static_cast<int>(level)]),
-		std::string(buf),	ts.tv_nsec, repr(level), line);
+	fmt::print("\033[{}m{}.{:09} {} {}\033[0m\n", static_cast<int>(colors_[static_cast<int>(level)]), std::string(buf), ts.tv_nsec, get_label(level), line);
 }
 
-void Agent::Escape(std::string &line, const std::string &str)
-{
-	for (const auto &c : str) {
+void Agent::Escape(std::string &line, const std::string &str) const {
+	line.reserve(str.size());
+ 	for (auto c : str) {
 		switch (c) {
 		case '\\':
 			line += "\\\\";
@@ -71,8 +65,7 @@ void Agent::Escape(std::string &line, const std::string &str)
 	}
 }
 
-void AgentJson::BuildLabels()
-{
+void AgentJson::BuildLabels() {
 	compiled_labels_ = "{";
 	for (auto label : labels_) {
 		compiled_labels_ += "\"";
@@ -85,9 +78,8 @@ void AgentJson::BuildLabels()
 	compiled_labels_ += "}";
 }
 
-void AgentJson::Flush()
-{
-	std::lock_guard<std::mutex> lock{mutex_};
+void AgentJson::Flush() {
+	std::lock_guard<std::recursive_mutex> lock{mutex_};
 
 	if (logs_.size() == 0) return;
 
@@ -95,11 +87,11 @@ void AgentJson::Flush()
 	std::string line = "[";
 
 	while (!logs_.empty()) {
-		auto &[s, t] = logs_.front();
+		auto &&[s, t] = logs_.front();
 
 		line.reserve(s.size());
 		line += "[\"";
-		line += detail::to_string(t);
+		line += std::to_string(t.tv_sec * 1000 * 1000 * 1000 + t.tv_nsec);
 		line += "\",\"";
 		Escape(line, s);
 		line += "\"],";
@@ -107,21 +99,21 @@ void AgentJson::Flush()
 		logs_.pop();
 	}
 
-	line.pop_back();
+	line.pop_back(); // remove last comma
 	line += "]";
 
+	payload.reserve(compiled_labels_.size() + line.size() + 36);
 	payload += "{\"streams\":[{\"stream\":";
 	payload += compiled_labels_;
 	payload += ",\"values\":";
 	payload += line;
 	payload += "}]}";
 
-	detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
+	detail::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
 }
 
 #if defined(HAS_PROTOBUF)
-void AgentProto::BuildLabels()
-{
+void AgentProto::BuildLabels() {
 	compiled_labels_ = "{";
 	for (const auto &label : labels_) {
 		Escape(compiled_labels_, label.first);
@@ -133,9 +125,8 @@ void AgentProto::BuildLabels()
 	compiled_labels_ += "}";
 }
 
-void AgentProto::Flush()
-{
-	std::lock_guard<std::mutex> lock{mutex_};
+void AgentProto::Flush() {
+	std::lock_guard<std::recursive_mutex> lock{mutex_};
 
 	std::string payload;
 	std::string compressed;
@@ -160,7 +151,7 @@ void AgentProto::Flush()
 
 	push_request.SerializeToString(&payload);
 	snappy::Compress(payload.data(), payload.size(), &compressed);
-	detail::http::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
+	detail::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
 }
 #endif
 

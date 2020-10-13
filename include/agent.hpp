@@ -1,5 +1,5 @@
-#ifndef AGENT_HPP_
-#define AGENT_HPP_
+#ifndef LOKI_CPP_AGENT_HPP_
+#define LOKI_CPP_AGENT_HPP_
 
 #include <map>
 #include <mutex>
@@ -16,8 +16,7 @@
 #  endif
 #endif
 
-namespace loki
-{
+namespace loki {
 
 /// \brief ASCII escape codes.
 enum class Color : int {
@@ -42,142 +41,141 @@ enum class Level : int {
 	Disable = 4,
 };
 
-class Agent
-{
+class Agent {
+public:
+	Agent(
+		std::map<std::string, std::string> &&labels,
+		std::size_t flush_interval,
+		std::size_t max_buffer,
+		Level log_level,
+		Level print_level,
+		const std::string &remote_host,
+		std::array<Color, 4> colors)
+	: labels_{labels}
+	, flush_interval_{flush_interval}
+	, max_buffer_{max_buffer}
+	, log_level_{log_level}
+	, print_level_{print_level}
+	, remote_host_{remote_host}
+	, push_url_{fmt::format("http://{}/loki/api/v1/push", remote_host_)}
+	, colors_{colors} {
+		curl_ = curl_easy_init();
+	}
+
+	Agent& operator=(const Agent&) = delete;
+	Agent(const Agent&) = delete;
+
+	~Agent() {
+		if (curl_) {
+			curl_easy_cleanup(curl_);
+		}
+		curl_ = nullptr;
+	}
+
+	/// \brief Return true if log contains any elements.
+	bool Done() {
+		return !logs_.empty();
+	}
+
+	/// \brief Flush all queued log lines.
+	void Flush() {}
+
+	/// \brief Send message to log queue with `Debug` priority.
+	template <typename... Args>
+	void Debugf(std::string_view format, const Args&... args) {
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Debug);
+	}
+
+	/// \brief Send message to log queue with `Info` priority.
+	template <typename... Args>
+	void Infof(std::string_view format, const Args&... args) {
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Info);
+	}
+
+	/// \brief Send message to log queue with `Warning` priority.
+	template <typename... Args>
+	void Warnf(std::string_view format, const Args&... args) {
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Warn);
+	}
+
+	/// \brief Send message to log queue with `Error` priority.
+	template <typename... Args>
+	void Errorf(std::string_view format, const Args&... args) {
+		Log(fmt::vformat(format, fmt::make_format_args(args...)), Level::Error);
+	}
+
 protected:
 	std::map<std::string, std::string> labels_;
 	std::size_t flush_interval_;
 	std::size_t max_buffer_;
 	Level log_level_;
 	Level print_level_;
+	std::string remote_host_;
+	std::string push_url_;
 	std::string compiled_labels_;
 	std::array<Color, 4> colors_;
 
-	std::queue<std::pair<std::string, timespec>> logs_;
+	std::queue<std::pair<std::string, timespec>> logs_{};
+	
 	CURL *curl_;
 
-	std::mutex mutex_;
+	std::recursive_mutex mutex_{};
 
-	/// \brief Escape " character in string.
-	void Escape(std::string &line, const std::string &str);
+	/// \brief Append to `line` escaped string `str`.
+	void Escape(std::string &line, const std::string &str) const;
 
 	/// \brief Handle incoming logs.
 	void Log(std::string &&line, Level level);
 
 	/// \brief Printing function.
-	/// TODO: implement a user-defined print callaback
 	void Print(const std::string &line, Level level, timespec ts) const;
 
 	void BuildLabels();
-
-public:
-	Agent(
-			std::map<std::string, std::string> &&labels,
-			std::size_t flush_interval,
-			std::size_t max_buffer,
-			Level log_level,
-			Level print_level,
-			std::array<Color, 4> colors)
-	: labels_{labels}
-	, flush_interval_{flush_interval}
-	, max_buffer_{max_buffer}
-	, log_level_{log_level}
-	, print_level_{print_level}
-	, colors_{colors}
-	, logs_{}
-	, mutex_{}
-	{
-		curl_ = curl_easy_init();
-	}
-
-	~Agent() {
-		curl_easy_cleanup(curl_);
-		curl_ = nullptr;
-	}
-
-	/// \brief Return true if log contains any elements.
-	bool Done() {
-		std::lock_guard<std::mutex> lock{mutex_};
-		return !logs_.empty();
-	}
-
-	/// \brief Flush all queued log lines.
-	/// TODO: add endpoint configuration
-	void Flush() {}
-
-	/// \brief Send message to log queue with `Debug` priority.
-	template <typename... Args>
-	void Debugf(const std::string &format, const Args&... args)
-	{
-		fmt::format_args argspack = fmt::make_format_args(args...);
-		Log(fmt::vformat(format, argspack), Level::Debug);
-	}
-
-	/// \brief Send message to log queue with `Info` priority.
-	template <typename... Args>
-	void Infof(const std::string &format, const Args&... args)
-	{
-		fmt::format_args argspack = fmt::make_format_args(args...);
-		Log(fmt::vformat(format, argspack), Level::Info);
-	}
-
-	/// \brief Send message to log queue with `Warning` priority.
-	template <typename... Args>
-	void Warnf(const std::string &format, const Args&... args)
-	{
-		fmt::format_args argspack = fmt::make_format_args(args...);
-		Log(fmt::vformat(format, argspack), Level::Warn);
-	}
-
-	/// \brief Send message to log queue with `Error` priority.
-	template <typename... Args>
-	void Errorf(const std::string &format, const Args&... args)
-	{
-		fmt::format_args argspack = fmt::make_format_args(args...);
-		Log(fmt::vformat(format, argspack), Level::Error);
-	}
-
 };
 
-class AgentJson final : public Agent
-{
-protected:
-	void BuildLabels();
+class AgentJson final : public Agent {
 public:
 	AgentJson(
-			std::map<std::string, std::string> &&labels,
-			std::size_t flush_interval,
-			std::size_t max_buffer,
-			Level log_level,
-			Level print_level,
-			std::array<Color, 4> colors)
-	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, colors} {
+		std::map<std::string, std::string> &&labels,
+		std::size_t flush_interval,
+		std::size_t max_buffer,
+		Level log_level,
+		Level print_level,
+		const std::string &remote_host,
+		std::array<Color, 4> colors)
+	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
 		BuildLabels();
 	}
+	
 	void Flush();
+
+protected:
+	void BuildLabels();
 };
 
 
 #if defined(HAS_PROTOBUF)
-class AgentProto final : public Agent
-{
-protected:
-	void BuildLabels();
+class AgentProto final : public Agent {
 public:
 	AgentProto(
-			std::map<std::string, std::string> &&labels,
-			std::size_t flush_interval,
-			std::size_t max_buffer,
-			Level log_level,
-			Level print_level,
-			std::array<Color, 4> colors)
-	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, colors} {
+		std::map<std::string, std::string> &&labels,
+		std::size_t flush_interval,
+		std::size_t max_buffer,
+		Level log_level,
+		Level print_level,
+		const std::string &remote_host,
+		std::array<Color, 4> colors)
+	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
 		BuildLabels();
 	}
+
 	void Flush();
+
+protected:
+	void BuildLabels();
 };
 #endif
 
 } // namespace loki
 
-#endif /* AGENT_HPP_ */
+#endif /* LOKI_CPP_AGENT_HPP_ */
