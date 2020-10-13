@@ -1,22 +1,42 @@
-find_package(Catch2 REQUIRED)
-if(TARGET Catch2::Catch2)
+find_package(GTest)
 
-	include(CTest)
-	include(Catch)
+if(GTEST_FOUND)
+  include(GoogleTest)
 
-	file(GLOB SOURCES
-		${PROJECT_SOURCE_DIR}/tests/main.cpp
-		${PROJECT_SOURCE_DIR}/tests/parser.cpp)
+  file(GLOB SOURCES
+    ${PROJECT_SOURCE_DIR}/src/registry.cpp
+    ${PROJECT_SOURCE_DIR}/src/agent.cpp
+    ${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
+    ${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
+    ${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc
+    ${PROJECT_SOURCE_DIR}/gen/google/protobuf/timestamp.pb.cc
+    ${PROJECT_SOURCE_DIR}/gen/logproto.pb.cc
+    
+    ${PROJECT_SOURCE_DIR}/tests/main.cpp)
 
-	add_executable(tests ${SOURCES})
-	include_directories(tests PRIVATE ${HEADERS})
+  set(HEADERS
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/gen)
 
-	target_link_libraries(tests loki-cpp)
-	add_test(tests tests)
+  add_executable(unittest ${SOURCES})
+  target_include_directories(unittest PRIVATE ${HEADERS})
+  target_link_libraries(unittest gtest)
+  target_link_libraries(unittest fmt)
 
-	add_custom_target(check
-		COMMAND ${CMAKE_CTEST_COMMAND}
-		DEPENDS tests)
+  find_package(Protobuf REQUIRED)
+  if(PROTOBUF_FOUND)
+    target_link_libraries(unittest snappy)
+    target_link_libraries(unittest ${PROTOBUF_LIBRARIES})
+  else()
+    message("Could not find protobof")
+  endif()
 
-else()
+  find_package(CURL REQUIRED)
+  if(CURL_FOUND)
+    target_link_libraries(unittest ${CURL_LIBRARIES})
+  else()
+    message(FATAL_ERROR "Could not find libcurl")
+  endif()
+
+  gtest_add_tests(TARGET unittest)
 endif()

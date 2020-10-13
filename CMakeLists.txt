@@ -14,7 +14,9 @@ option(BUILD_TESTS       "Build unit testing"        OFF)
 set(CMAKE_CXX_STANDARD   17)
 set(CMAKE_CXX_EXTENSIONS Off)
 
+# Testing
 if(BUILD_TESTS)
+	enable_testing()
 	add_subdirectory(tests)
 endif()
 
