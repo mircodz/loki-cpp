@@ -1,25 +1,15 @@
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
+#ifndef LOKI_CPP_UTILS_HPP_
+#define LOKI_CPP_UTILS_HPP_
 
 #include <curl/curl.h>
 #include <string>
 
-namespace loki
-{
-
-namespace detail
-{
-
-std::string to_string(const timespec &t);
-
-namespace http
-{
+namespace loki::detail {
 
 enum class RequestMethod { Post, Get };
-enum class ContentType   { Json, Raw };
+enum class ContentType { Json, Raw };
 
-struct Response
-{
+struct Response {
 	std::string body;
 	int code;
 };
@@ -30,10 +20,6 @@ Response request(CURL *curl, RequestMethod method, const std::string &url, const
 
 size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data);
 
-} // namespace http
+} // namespace loki::detail
 
-} // namespace detail
-
-} // namespace loki
-
-#endif /* UTILS_HPP_ */
+#endif /* LOKI_CPP_UTILS_HPP_ */

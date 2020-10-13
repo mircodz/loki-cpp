@@ -1,36 +1,20 @@
 #include "detail/utils.hpp"
 
 #include <chrono>
-
 #include <fmt/format.h>
 
-namespace loki
-{
+namespace loki::detail {
 
-namespace detail
-{
-
-std::string to_string(const timespec &t)
-{
-	return std::to_string(t.tv_sec * 1000 * 1000 * 1000 + t.tv_nsec);
-}
-
-namespace http
-{
-
-Response get(CURL *curl, const std::string &url)
-{
+Response get(CURL *curl, const std::string &url) {
 	return request(curl, RequestMethod::Get, url, std::string{}, ContentType::Raw);
 }
 
-Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type)
-{
+Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type) {
 	return request(curl, RequestMethod::Post, url, payload, content_type);
 }
 
-Response request(CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type)
-{
-	Response r;
+Response request(CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type) {
+	Response r{};
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.data());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
@@ -50,19 +34,16 @@ Response request(CURL *curl, RequestMethod method, const std::string &url, const
 
 	curl_easy_perform(curl);
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &r.code);
+	
 	return r;
 }
 
-size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data)
-{
-	if (data == nullptr)
+size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data) {
+	if (data == nullptr) {
 		return 0;
+	}
 	data->append(ptr, size * nmemb);
 	return size * nmemb;
 }
 
-} // namespace http
-
-} // namespace detail
-
-} // namespace loki
+} // namespace loki::detail
