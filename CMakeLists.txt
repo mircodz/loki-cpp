@@ -44,7 +44,7 @@ target_include_directories(loki-cpp PRIVATE ${HEADERS})
 target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
 
 
-find_package(Protobuf REQUIRED)
+find_package(Protobuf)
 if(PROTOBUF_FOUND)
 	target_link_libraries(loki-cpp snappy)
 	target_link_libraries(loki-cpp ${PROTOBUF_LIBRARIES})
@@ -59,7 +59,7 @@ if(PROTOBUF_FOUND)
 				${_file}
 			RESULT_VARIABLE result)
 		if(${result})
-			message(FATAL_ERROR "Error compiling protobuf schemas.")
+			message("Error compiling protobuf schemas.")
 		endif()
 	endfunction()
 

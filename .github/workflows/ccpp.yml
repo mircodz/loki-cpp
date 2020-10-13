@@ -11,7 +11,7 @@ jobs:
 
     - name: Download Dependencies
       run : |
-        sudo apt-get-install libgtest-dev libcurl4-openssl-dev
+        sudo apt-get install libgtest-dev libcurl4-openssl-dev libfmt-dev libsnappy-dev protobuf-compiler
 
     - name: Configure Cmake
       run: |
