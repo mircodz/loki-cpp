@@ -50,7 +50,7 @@ void Agent::Print(const std::string &line, Level level, timespec ts) const {
 
 void Agent::Escape(std::string &line, const std::string &str) const {
 	line.reserve(str.size());
- 	for (auto c : str) {
+	for (auto c : str) {
 		switch (c) {
 		case '\\':
 			line += "\\\\";

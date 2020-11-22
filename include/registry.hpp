@@ -35,8 +35,10 @@ public:
 	/// \brief Check whether Loki is up and running.
 	[[nodiscard]] bool Ready() const;
 
+  /*
 	/// \brief Retrieve Loki's Promethus metrics.
 	[[nodiscard]] std::vector<Metric> Metrics() const;
+  */
 
 	/// \brief Create an agent that will be handled by the registry.
 	///

@@ -4,7 +4,7 @@
 #include "detail/utils.hpp"
 
 namespace loki {
- 
+
 template <typename AgentType>
 Registry<AgentType>::Registry(
 		std::map<std::string, std::string> &&labels,
@@ -35,7 +35,7 @@ Registry<AgentType>::Registry(
 
 template <typename AgentType>
 Registry<AgentType>::~Registry() {
- 	close_request_.store(true);
+	close_request_.store(true);
 	for (auto &agent : agents_) {
 		agent->Flush();
 	}
@@ -53,6 +53,7 @@ bool Registry<AgentType>::Ready() const {
 	return r;
 }
 
+/*
 template <typename AgentType>
 std::vector<Metric> Registry<AgentType>::Metrics() const {
 	CURL *curl = curl_easy_init();
