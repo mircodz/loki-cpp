@@ -14,7 +14,7 @@ Registry<AgentType>::Registry(
 		Level print_level,
 		const std::string &remote_host,
 		std::array<Color, 4> colors)
-	: labels_{labels}
+	: labels_{std::move(labels)}
 	, flush_interval_{flush_interval}
 	, max_buffer_{max_buffer}
 	, log_level_{log_level}
@@ -62,12 +62,13 @@ std::vector<Metric> Registry<AgentType>::Metrics() const {
 	Parser parser{lexer.tokens()};
 	return parser.metrics();
 }
+*/
 
 template <typename AgentType>
 AgentType &Registry<AgentType>::Add(std::map<std::string, std::string> &&labels) {
 	std::lock_guard<std::mutex> lock{mutex_};
-	labels.merge(labels_);
-	auto agent = std::make_unique<AgentType>(std::move(labels), flush_interval_, max_buffer_, log_level_, print_level_, remote_host_, colors_);
+	labels.insert(labels_.begin(), labels_.end());
+	auto agent = std::make_unique<AgentType>(labels, flush_interval_, max_buffer_, log_level_, print_level_, remote_host_, colors_);
 	auto &ref = *agent;
 	agents_.push_back(std::move(agent));
 	return ref;

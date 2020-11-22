@@ -109,7 +109,7 @@ void AgentJson::Flush() {
 	payload += line;
 	payload += "}]}";
 
-	detail::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", payload);
+	detail::post(curl_, fmt::format("http://{}/loki/api/v1/push", remote_host_), payload, detail::ContentType::Json);
 }
 
 #if defined(HAS_PROTOBUF)
@@ -151,7 +151,7 @@ void AgentProto::Flush() {
 
 	push_request.SerializeToString(&payload);
 	snappy::Compress(payload.data(), payload.size(), &compressed);
-	detail::post(curl_, "http://127.0.0.1:3100/loki/api/v1/push", compressed);
+	detail::post(curl_, fmt::format("http://{}/loki/api/v1/push", remote_host_), compressed);
 }
 #endif
 

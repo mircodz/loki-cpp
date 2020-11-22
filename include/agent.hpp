@@ -44,7 +44,7 @@ enum class Level : int {
 class Agent {
 public:
 	Agent(
-		std::map<std::string, std::string> &&labels,
+		std::map<std::string, std::string> &labels,
 		std::size_t flush_interval,
 		std::size_t max_buffer,
 		Level log_level,
@@ -136,14 +136,14 @@ protected:
 class AgentJson final : public Agent {
 public:
 	AgentJson(
-		std::map<std::string, std::string> &&labels,
+		std::map<std::string, std::string> &labels,
 		std::size_t flush_interval,
 		std::size_t max_buffer,
 		Level log_level,
 		Level print_level,
 		const std::string &remote_host,
 		std::array<Color, 4> colors)
-	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
+	: Agent{labels, flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
 		BuildLabels();
 	}
 	
@@ -158,14 +158,14 @@ protected:
 class AgentProto final : public Agent {
 public:
 	AgentProto(
-		std::map<std::string, std::string> &&labels,
+		std::map<std::string, std::string> &labels,
 		std::size_t flush_interval,
 		std::size_t max_buffer,
 		Level log_level,
 		Level print_level,
 		const std::string &remote_host,
 		std::array<Color, 4> colors)
-	: Agent{std::move(labels), flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
+	: Agent{labels, flush_interval, max_buffer, log_level, print_level, remote_host, colors} {
 		BuildLabels();
 	}
 
