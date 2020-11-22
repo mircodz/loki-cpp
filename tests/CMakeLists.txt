@@ -6,12 +6,13 @@ if(GTEST_FOUND)
   file(GLOB SOURCES
     ${PROJECT_SOURCE_DIR}/src/registry.cpp
     ${PROJECT_SOURCE_DIR}/src/agent.cpp
+    ${PROJECT_SOURCE_DIR}/src/query.cpp
     ${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
     ${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
     ${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc
     ${PROJECT_SOURCE_DIR}/gen/google/protobuf/timestamp.pb.cc
     ${PROJECT_SOURCE_DIR}/gen/logproto.pb.cc
-    
+
     ${PROJECT_SOURCE_DIR}/tests/main.cpp)
 
   set(HEADERS

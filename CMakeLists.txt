@@ -29,6 +29,7 @@ endif()
 file(GLOB SOURCES
 	${PROJECT_SOURCE_DIR}/src/registry.cpp
 	${PROJECT_SOURCE_DIR}/src/agent.cpp
+	${PROJECT_SOURCE_DIR}/src/query.cpp
 	${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
 	${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
 	${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc
@@ -91,7 +92,7 @@ target_link_libraries(loki-cpp pthread)
 set_target_properties(loki-cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION 1
-	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp")
+	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp;include/query.hpp")
 
 install(TARGETS loki-cpp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

@@ -42,13 +42,25 @@ int main() {
 }
 ```
 
+### Queries (work in progress)
+
+```c++
+loki::Query q{R"({process="foobar"})"};
+loki::Cursor cursor = q.Execute();
+for (const auto & batch : cursor) {
+  for (const auto & line : batch.Lines()) {
+    fmt::print("{}\n", line);
+  }
+}
+```
+
 Now to compile our example run:
 
 ```bash
-g++ example.cpp -std=c++17 -lloki-cpp
+g++ example.cpp -std=c++17 $(pkg-config loki-cpp --cflags --libs)
 ```
 
-## Metrics Parser
+### Metrics Parser (work in progress)
 
 `loki-cpp` also ships with a [parser](https://github.com/mircodezorzi/loki-cpp/blob/master/include/parser.hpp) to allow an easier interaction with Loki's metrics, an example of how to use it:
 

@@ -5,8 +5,8 @@
 
 namespace loki::detail {
 
-Response get(CURL *curl, const std::string &url) {
-	return request(curl, RequestMethod::Get, url, std::string{}, ContentType::Raw);
+Response get(CURL *curl, const std::string &url, const std::string &params) {
+	return request(curl, RequestMethod::Get, url + params, "", ContentType::Raw);
 }
 
 Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type) {
