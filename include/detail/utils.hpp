@@ -1,7 +1,7 @@
-#ifndef LOKI_CPP_DETAIL_UTILS_HPP_
-#define LOKI_CPP_DETAIL_UTILS_HPP_
+#pragma once
 
 #include <curl/curl.h>
+
 #include <string>
 
 namespace loki::detail {
@@ -14,12 +14,13 @@ struct Response {
 	int code;
 };
 
-Response get(CURL *curl, const std::string &url, const std::string &params = "");
-Response post(CURL *curl, const std::string &url, const std::string &payload, ContentType content_type = ContentType::Raw);
-Response request(CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type);
-
 size_t writer(char *ptr, size_t size, size_t nmemb, std::string *data);
+Response request(
+    CURL *curl, RequestMethod method, const std::string &url, const std::string &payload, ContentType content_type);
+Response get(CURL *curl, const std::string &url, const std::string &params = "");
+Response post(CURL *curl,
+              const std::string &url,
+              const std::string &payload,
+              ContentType content_type = ContentType::Raw);
 
-} // namespace loki::detail
-
-#endif // LOKI_CPP_DETAIL_UTILS_HPP_
+}  // namespace loki::detail

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4)
-project(loki-cpp VERSION 0.3.0)
+project(loki-cpp VERSION 0.4.0)
 
 include(GNUInstallDirs)
 
@@ -7,8 +7,8 @@ include(GNUInstallDirs)
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
 # Project Settings
-option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
-option(BUILD_TESTS       "Build unit testing"        OFF)
+option(BUILD_SHARED_LIBS "Build libraries as shared" On)
+option(BUILD_TESTS       "Build unit testing"        Off)
 
 # Compiler Settings
 set(CMAKE_CXX_COMPILER             "/usr/bin/g++")
@@ -27,10 +27,10 @@ if(BUILD_TESTS)
 endif()
 
 file(GLOB SOURCES
-	${PROJECT_SOURCE_DIR}/src/registry.cpp
 	${PROJECT_SOURCE_DIR}/src/agent.cpp
-	${PROJECT_SOURCE_DIR}/src/query.cpp
 	${PROJECT_SOURCE_DIR}/src/detail/utils.cpp
+	${PROJECT_SOURCE_DIR}/src/query.cpp
+
 	${PROJECT_SOURCE_DIR}/gen/github.com/gogo/protobuf/gogoproto/gogo.pb.cc
 	${PROJECT_SOURCE_DIR}/gen/google/protobuf/descriptor.pb.cc
 	${PROJECT_SOURCE_DIR}/gen/google/protobuf/timestamp.pb.cc
@@ -44,10 +44,17 @@ add_library(loki-cpp ${SOURCES})
 target_include_directories(loki-cpp PRIVATE ${HEADERS})
 target_compile_options(loki-cpp PRIVATE -Wall -Wextra)
 
-
 find_package(Protobuf)
 if(PROTOBUF_FOUND)
+  #find_package(snappy REQUIRED)
+  #if(SNAPPY_FOUND)
+  #  target_link_libraries(loki-cpp ${Snappy_INCLUDE_DIR})
+  #  include_directories(${Snappy_LIBRARIES})
+  #else()
+	#  message(FATAL_ERROR "Could not find snappy")
+  #endif()
 	target_link_libraries(loki-cpp snappy)
+
 	target_link_libraries(loki-cpp ${PROTOBUF_LIBRARIES})
 	include_directories(${PROTOBUF_INCLUDE_DIRS})
 
@@ -85,18 +92,32 @@ else()
 	message(FATAL_ERROR "Could not find libcurl")
 endif()
 
-target_link_libraries(loki-cpp fmt)
-target_link_libraries(loki-cpp pthread)
+find_package(fmt REQUIRED)
+IF(fmt_FOUND)
+  target_link_libraries(loki-cpp fmt::fmt)
+else()
+  message(FATAL_ERROR "Could not find libfmt")
+endif()
+
+set(THREADS_PREFER_PTHREAD_FLAG On)
+find_package(Threads REQUIRED)
+if(Threads_FOUND)
+  target_link_libraries(loki-cpp Threads::Threads)
+else()
+  message(FATAL_ERROR "Could not find proper threading library")
+endif()
 
 # Installation settings
 set_target_properties(loki-cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION 1
-	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/detail/utils.hpp;include/agent.hpp;include/query.hpp")
+	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/agent.hpp;include/query.hpp"
+  PRIVATE_HEADER "include/detail/utils.hpp")
 
 install(TARGETS loki-cpp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	PUBLIC_HEADER DESTINATION /usr/local/include/loki OPTIONAL)
+	PUBLIC_HEADER DESTINATION /usr/local/include/loki OPTIONAL
+  PRIVATE_HEADER DESTINATION /usr/local/include/loki/detail)
 
 configure_file(loki-cpp.pc.in loki-cpp.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/loki-cpp.pc

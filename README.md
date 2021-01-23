@@ -42,11 +42,16 @@ int main() {
 }
 ```
 
+Now to compile the example run:
+
+```bash
+g++ example.cpp -std=c++17 `pkg-config loki-cpp --cflags --libs`
+```
+
 ### Queries (work in progress)
 
 ```c++
 loki::Query q{R"({process="foobar"})"};
-loki::Cursor cursor = q.Execute();
 for (const auto & batch : cursor) {
   for (const auto & line : batch.Lines()) {
     fmt::print("{}\n", line);
@@ -54,18 +59,12 @@ for (const auto & batch : cursor) {
 }
 ```
 
-Now to compile our example run:
-
-```bash
-g++ example.cpp -std=c++17 $(pkg-config loki-cpp --cflags --libs)
-```
-
 ### Metrics Parser (work in progress)
 
 `loki-cpp` also ships with a [parser](https://github.com/mircodezorzi/loki-cpp/blob/master/include/parser.hpp) to allow an easier interaction with Loki's metrics, an example of how to use it:
 
 ```cpp
-for (const auto metric : registry.Metrics()) {
+for (const auto &metric : registry.Metrics()) {
   fmt::print("{}: {}\n", metric.name, metric.value);
 }
 ```
@@ -92,7 +91,3 @@ make install
   - fmt
   - curl
   - protobuf + snappy (optional)
-
-## Todo
-
-  - Write tests for each component

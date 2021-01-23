@@ -1,5 +1,4 @@
-#ifndef LOKI_CPP_BUILDER_HPP_
-#define LOKI_CPP_BUILDER_HPP_
+#pragma once
 
 #include "registry.hpp"
 
@@ -8,8 +7,7 @@ namespace loki {
 template <typename T>
 class Builder {
 public:
-
-	Builder<T>& Labels(const std::map<std::string, std::string> &labels) {
+	Builder<T>& Labels(const std::unordered_map<std::string, std::string>& labels) {
 		labels_ = labels;
 		return *this;
 	}
@@ -34,10 +32,10 @@ public:
 		return *this;
 	}
 
-	Builder<T>& Remote(const std::string &remote_host) {
+	Builder<T>& Remote(const std::string& remote_host) {
 		remote_host_ = remote_host;
 		return *this;
-	} 
+	}
 
 	Builder<T>& Colorize(Level level, Color color) {
 		colors_[static_cast<int>(level)] = color;
@@ -45,38 +43,18 @@ public:
 	}
 
 	Registry<T> Build() {
-		return 
-			{ std::move(labels_)
-			, flush_interval_
-			, max_buffer_
-			, log_level_
-			, print_level_
-			, remote_host_
-			, colors_
-			};
+		return {std::move(labels_), flush_interval_,         max_buffer_, log_level_,
+		        print_level_,       std::move(remote_host_), colors_};
 	}
 
 private:
-	std::map<std::string, std::string> labels_{};
+	std::unordered_map<std::string, std::string> labels_{};
 	std::size_t flush_interval_{5000};
 	std::size_t max_buffer_{10000};
 	Level log_level_{Level::Info};
 	Level print_level_{Level::Disable};
 	std::string remote_host_{"127.0.0.1:3100"};
-	std::array<Color, 4> colors_{
-		{ Color::White
-		, Color::White
-		, Color::White
-		, Color::White 
-		}
-	};
+	std::array<Color, 4> colors_{{Color::White, Color::White, Color::White, Color::White}};
 };
 
-template class Builder<AgentJson>;
-#if defined(HAS_PROTOBUF)
-template class Builder<AgentProto>;
-#endif
-
-} // namespace loki
-
-#endif /* LOKI_CPP_BUILDER_HPP_ */
+}  // namespace loki

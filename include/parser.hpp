@@ -1,180 +1,136 @@
-#ifndef PARSER_HPP_
-#define PARSER_HPP_
+#pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
-namespace loki
-{
+namespace loki {
 
-struct Metric
-{
-	std::string name{};
-	long double value{};
-	std::string help{};
-	std::string type{};
-	std::vector<std::pair<std::string, std::string>> labels{};
+struct Metric {
+	std::string name;
+	long double value;
+	std::string help;
+	std::string type;
+	std::map<std::string, std::string> labels;
 };
 
-class Token
-{
-public:
-	enum class Kind
-		{ AttributeType
-		, AttributeKey
-		, AttributeValue
-		, MetricKey
-		, MetricLabelStart
-		, MetricLabelKey
-		, MetricLabelValue
-		, MetricLabelEnd
-		, MetricValue
-	};
+namespace detail {
 
-	explicit Token(std::string value, Kind kind)
-		: value_{value}
-		, kind_{kind} {}
-
-	std::string to_string() const
-	{
-		switch (kind_) {
-			case Kind::AttributeType: return "attribute type: " + value_;
-			case Kind::AttributeKey: return "attribute key: " + value_;
-			case Kind::AttributeValue: return "attribute value:" + value_;
-			case Kind::MetricKey: return "metric key:" + value_;
-			case Kind::MetricLabelStart: return "{";
-			case Kind::MetricLabelKey: return "label key: " + value_;
-			case Kind::MetricLabelValue: return "label value: " + value_;
-			case Kind::MetricLabelEnd: return "}";
-			case Kind::MetricValue: return "value:" + value_;
-		}
-	}
+struct Token {
+	enum class Kind {
+		AttributeType,
+		AttributeKey,
+		AttributeValue,
+		MetricKey,
+		MetricLabelStart,
+		MetricLabelKey,
+		MetricLabelValue,
+		MetricLabelEnd,
+		MetricValue
+	} kind_;
 
 	std::string value_;
-	Kind kind_;
+
+	explicit Token(std::string value, Kind kind) : kind_{kind}, value_{value} {
+	}
 };
 
-class Lexer
-{
-public:
-	explicit Lexer(const std::string &source)
-		: source_{source} { tokenize(); }
+}  // namespace detail
 
-	std::vector<Token> tokens() { return tokens_; }
-
+class Parser {
 private:
-	std::vector<Token> tokens_{};
+	using metrics_t = std::map<std::string, Metric>;
+
+	metrics_t metrics_{};
+
 	std::string source_;
 	decltype(source_.cbegin()) cursor_{source_.cbegin()};
 
-	void tokenize()
-	{
-		while (cursor_ != source_.end()) {
-			switch(*cursor_) {
-			case '#':
+	bool has_next() const {
+		return cursor_ != source_.end();
+	}
+
+	std::optional<Metric> Consume() {
+		if (has_next()) {
+			return std::nullopt;
+		}
+
+		Metric m{};
+
+		while (true) {
+			if (*cursor_ == '#') {
 				cursor_ += 2;
-				if (std::string v = scan_until(" "); v == "TYPE" || v == "HELP") {
-					new_token(v, Token::Kind::AttributeType);
-					new_token(scan_until(" "), Token::Kind::AttributeKey);
-					new_token(scan_until("\n"), Token::Kind::AttributeValue);
+				auto key = scan_until(" ");
+				if (key == "HELP") {
+					m.help = scan_until("\n");
+				} else if (key == "TYPE") {
+					m.type = scan_until("\n");
 				} else {
 					scan_until(" ");
 					scan_until("\n");
 				}
-				break;
-			default:
-				new_token(scan_until("{ "), Token::Kind::MetricKey);
+			} else {
+				m.name = scan_until("{ ");
 				if (*(cursor_ - 1) == '{') {
-					new_token("", Token::Kind::MetricLabelStart);
 					while (*cursor_ != '}') {
-						new_token(scan_until("="), Token::Kind::MetricLabelKey);
+						auto key      = scan_until("=");
 						std::string v = scan_until(",}");
 						cursor_ -= 1;
-						if (*cursor_ == ',') cursor_++;
-						new_token(v.substr(1, v.size() - 2), Token::Kind::MetricLabelValue);
+						if (*cursor_ == ',')
+							cursor_++;
+						auto value    = v.substr(1, v.size() - 2);
+						m.labels[key] = value;
 					}
-					new_token("", Token::Kind::MetricLabelEnd);
 				}
 				cursor_ += 2;
-				new_token(scan_until("\n"), Token::Kind::MetricValue);
-				break;
+				m.value          = std::stold(scan_until("\n"));
+				metrics_[m.name] = m;
+				return m;
 			}
 		}
 	}
 
-	void new_token(std::string value, Token::Kind kind)
-	{
-		tokens_.emplace_back(Token{value, kind});
-	}
-
-	std::string scan_until(const std::string &delim)
-	{
+	std::string scan_until(const std::string &delim) {
 		auto cur = cursor_ - source_.begin();
 		auto end = source_.find_first_of(delim, cursor_ - source_.begin());
-		if (end == std::string::npos) end = source_.size() - 1;
+		if (end == std::string::npos) {
+			end = source_.size() - 1;
+		}
 		cursor_ = source_.begin() + end + 1;
 		return source_.substr(cur, end - cur);
 	}
 
-};
-
-class Parser
-{
 public:
-	explicit Parser(const std::vector<Token> &tokens)
-		: tokens_{tokens.begin(), tokens.end()} { parse(); }
-
-	std::vector<Metric> metrics() { return metrics_; }
-
-private:
-	std::vector<Metric> metrics_{};
-	std::vector<Token> tokens_;
-	decltype(tokens_.cbegin()) cursor_{tokens_.cbegin()};
-
-	void parse()
-	{
-		Metric m{};
-		while (cursor_ < tokens_.end()) {
-			switch (cursor_->kind_) {
-			case Token::Kind::AttributeType:
-				if (cursor_->value_ == "TYPE") {
-					m.type = (cursor_ + 2)->value_;
-				} else if (cursor_->value_ == "HELP") {
-					m.help = (cursor_ + 2)->value_;
-				}
-				cursor_ += 3;
-				break;
-			case Token::Kind::MetricKey:
-				m.name = cursor_->value_;
-				cursor_++;
-				break;
-			case Token::Kind::MetricLabelStart:
-				cursor_++;
-				while (cursor_->kind_ != Token::Kind::MetricLabelEnd) {
-					m.labels.emplace_back(std::make_pair(cursor_->value_, (cursor_ + 1)->value_));
-					cursor_ += 2;
-				}
-				cursor_++;
-				break;
-			case Token::Kind::MetricValue:
-				m.value = std::stold(cursor_->value_);
-				metrics_.emplace_back(m);
-				m = Metric{};
-				cursor_++;
-				break;
-			case Token::Kind::AttributeKey:
-			case Token::Kind::AttributeValue:
-			case Token::Kind::MetricLabelKey:
-			case Token::Kind::MetricLabelValue:
-			case Token::Kind::MetricLabelEnd:
-				cursor_++;
-				break;
-			}
-		}
+	explicit Parser(const std::string &source) : source_{source} {
 	}
 
+	metrics_t Metrics() {
+		while (Consume())
+			;
+		return metrics_;
+	}
+
+	class MetricsIterator {
+	public:
+		Parser &parser_;
+		Metric metric_;
+		Metric &operator*() {
+			return metric_;
+		}
+		MetricsIterator &operator++() {
+			metric_ = parser_.Consume().value();
+			return *this;
+		}
+		MetricsIterator(Parser &parser) : parser_{parser} {
+		}
+	};
+
+	MetricsIterator begin() {
+		return *this;
+	}
+	MetricsIterator end() {
+		return *this;
+	}
 };
 
-} // namespace loki
-
-#endif /* PARSER_HPP_ */
+}  // namespace loki
