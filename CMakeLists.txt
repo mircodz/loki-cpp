@@ -111,7 +111,7 @@ endif()
 set_target_properties(loki-cpp PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION 1
-	PUBLIC_HEADER "include/parser.hpp;include/builder.hpp;include/registry.hpp;include/agent.hpp;include/query.hpp"
+	PUBLIC_HEADER "include/builder.hpp;include/registry.hpp;include/agent.hpp"
   PRIVATE_HEADER "include/detail/utils.hpp")
 
 install(TARGETS loki-cpp
