@@ -24,13 +24,13 @@ public:
 	         Level print_level,
 	         std::string &&remote_host,
 	         std::array<Color, 4> colors)
-	    : labels_{std::move(labels)}
-	    , flush_interval_{flush_interval}
-	    , max_buffer_{max_buffer}
-	    , log_level_{log_level}
-	    , print_level_{print_level}
-	    , remote_host_{std::move(remote_host)}
-	    , colors_{colors} {
+	    : labels_{std::move(labels)},
+	      flush_interval_{flush_interval},
+	      max_buffer_{max_buffer},
+	      log_level_{log_level},
+	      print_level_{print_level},
+	      remote_host_{std::move(remote_host)},
+	      colors_{colors} {
 		curl_global_init(CURL_GLOBAL_DEFAULT);
 		thread_ = std::thread([this]() {
 			while (!close_request_.load()) {

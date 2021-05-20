@@ -66,14 +66,14 @@ public:
 	      Level print_level,
 	      const std::string &remote_host,
 	      std::array<Color, 4> colors)
-	    : labels_{labels}
-	    , flush_interval_{flush_interval}
-	    , max_buffer_{max_buffer}
-	    , log_level_{log_level}
-	    , print_level_{print_level}
-	    , remote_host_{remote_host}
-	    , push_url_{fmt::format("http://{}/loki/api/v1/push", remote_host_)}
-	    , colors_{colors} {
+	    : labels_{labels},
+	      flush_interval_{flush_interval},
+	      max_buffer_{max_buffer},
+	      log_level_{log_level},
+	      print_level_{print_level},
+	      remote_host_{remote_host},
+	      push_url_{fmt::format("http://{}/loki/api/v1/push", remote_host_)},
+	      colors_{colors} {
 		logs_.resize(max_buffer_);
 		cursor_ = logs_.begin();
 	}
@@ -147,18 +147,6 @@ protected:
 	decltype(logs_.begin()) cursor_;
 
 	std::recursive_mutex mutex_{};
-
-	/// \brief Append to `line` escaped string `str`.
-	void escape(std::string &line, const std::string &str) const {
-		line.reserve(str.size());
-		for (auto c : str) {
-			switch (c) {
-			case '\\': line += "\\\\"; break;
-			case '\"': line += "\\\""; break;
-			default: line += c; break;
-			}
-		}
-	}
 
 	/// \brief Handle incoming logs.
 	void log(std::string &&line, Level level) {
