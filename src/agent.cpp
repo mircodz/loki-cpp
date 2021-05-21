@@ -15,7 +15,7 @@ void AgentJson::Flush() {
 
 	fflush(stdout);
 
-	if (logs_.size() == 0) {
+	if (logs_.begin() == cursor_) {
 		return;
 	}
 
@@ -30,9 +30,10 @@ void AgentJson::Flush() {
 		streams[i] += "[\"";
 		streams[i] += std::to_string(c->time_.tv_sec * 1000 * 1000 * 1000 + c->time_.tv_nsec);
 		streams[i] += "\",\"";
-		escape(streams[i], c->line_);
+		detail::json_escape(streams[i], c->line_);
 		streams[i] += "\"],";
 	}
+	cursor_ = logs_.begin();
 
 	payload += "{\"streams\":[";
 
@@ -62,9 +63,9 @@ void AgentJson::BuildLabels() {
 	std::string rest = "";
 	for (auto &label : labels_) {
 		rest += "\"";
-		escape(rest, label.first);
+		detail::json_escape(rest, label.first);
 		rest += "\":\"";
-		escape(rest, label.second);
+		detail::json_escape(rest, label.second);
 		rest += "\",";
 	}
 
@@ -108,6 +109,8 @@ void AgentProto::Flush() {
 		entries->set_allocated_timestamp(timestamp);
 	}
 
+	cursor_ = logs_.begin();
+
 	push_request.SerializeToString(&payload);
 	snappy::Compress(payload.data(), payload.size(), &compressed);
 	detail::post(curl_, fmt::format("http://{}/loki/api/v1/push", remote_host_), compressed);
@@ -117,9 +120,9 @@ void AgentProto::BuildLabels() {
 	std::string rest = "";
 	for (auto &label : labels_) {
 		rest += "\"";
-		escape(rest, label.first);
+		detail::json_escape(rest, label.first);
 		rest += "\"=\"";
-		escape(rest, label.second);
+		detail::json_escape(rest, label.second);
 		rest += "\",";
 	}
 

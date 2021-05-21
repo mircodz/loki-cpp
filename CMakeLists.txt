@@ -81,7 +81,7 @@ if(PROTOBUF_FOUND)
 		compile_proto(${_file})
 	endforeach()
 else()
-	message("Could not find protobof")
+	message("Could not find protobuf")
 endif()
 
 find_package(CURL REQUIRED)
