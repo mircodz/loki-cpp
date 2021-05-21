@@ -8,5 +8,5 @@ Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
 Requires:
-Libs: -L${libdir} -lpthread -lprotobuf -lsnappy -lfmt -lloki-cpp
+Libs: -L${libdir} -lpthread -lprotobuf -lsnappy -lfmt -lcurl -lloki-cpp
 Cflags: -I${includedir}

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4)
-project(loki-cpp VERSION 0.4.0)
+project(loki-cpp VERSION 0.5.0)
 
 include(GNUInstallDirs)
 
@@ -86,8 +86,7 @@ endif()
 
 find_package(CURL REQUIRED)
 if(CURL_FOUND)
-	include_directories(${CURL_INCLUDE_DIR})
-	target_link_libraries(loki-cpp ${CURL_LIBRARIES})
+	target_link_libraries(loki-cpp CURL::libcurl)
 else()
 	message(FATAL_ERROR "Could not find libcurl")
 endif()
