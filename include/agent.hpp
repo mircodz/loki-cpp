@@ -10,6 +10,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <array>
 
 #define USE_PROTOBUF
 
