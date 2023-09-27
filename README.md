@@ -1,7 +1,6 @@
 # Loki client written in modern c++
 
 [![CI Status](https://github.com/mircodezorzi/loki-cpp/workflows/Continuous%20Integration/badge.svg)](https://github.com/mircodezorzi/loki-cpp/actions?workflow=Continuous+Integration)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3ce68eb8a73444448f1c475eb3a222c5)](https://www.codacy.com/manual/mircodezorzi/loki-cpp?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mircodezorzi/loki-cpp&amp;utm_campaign=Badge_Grade)
 
 Inspired by [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp).
 
